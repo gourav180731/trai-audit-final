@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discrepancy Detail - TRAI Audit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <a class="btn btn-outline-light" th:href="@{/alert/{id}(id=${record.alertId})}">
+                <i class="fas fa-bell"></i> View Alert
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2><i class="fas fa-flag text-danger"></i> Discrepancy Record Details</h2>
+                <p class="text-muted">Record ID: <strong>#<span th:text="${record.id}">ID</span></strong></p>
+            </div>
+        </div>
+
+        <!-- Main Discrepancy Info -->
+        <div class="row mt-4">
+            <div class="col-lg-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="fas fa-exclamation-circle"></i> Discrepancy Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Type:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-danger" th:text="${record.discrepancyType}">Type</span>
+                            </dd>
+
+                            <dt class="col-sm-4">Status:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge" 
+                                      th:classappend="${record.status == 'OPEN' ? 'bg-danger' : 
+                                                       record.status == 'ACKNOWLEDGED' ? 'bg-warning' : 
+                                                       record.status == 'RESOLVED' ? 'bg-success' : 'bg-secondary'}"
+                                      th:text="${record.status}">Status</span>
+                            </dd>
+
+                            <dt class="col-sm-4">Detection Time:</dt>
+                            <dd class="col-sm-8" th:text="${#temporals.format(record.detectionTime, 'dd-MM-yyyy HH:mm:ss')}">Time</dd>
+
+                            <dt class="col-sm-4">TSP:</dt>
+                            <dd class="col-sm-8"><strong th:text="${record.tsp}">TSP</strong></dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0"><i class="fas fa-balance-scale"></i> Values & Deviation</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Actual Value:</dt>
+                            <dd class="col-sm-8"><code th:text="${record.actualValue}">Actual</code></dd>
+
+                            <dt class="col-sm-4">Expected Value:</dt>
+                            <dd class="col-sm-8"><code th:text="${record.expectedValue}">Expected</code></dd>
+
+                            <dt class="col-sm-4">Deviation:</dt>
+                            <dd class="col-sm-8">
+                                <span class="text-danger fw-bold" th:text="${record.deviation}">Deviation</span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-bell"></i> Alert Context</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Alert ID:</dt>
+                            <dd class="col-sm-8">
+                                <a th:href="@{/alert/{id}(id=${record.alertId})}" th:text="${record.alertId}">Alert</a>
+                            </dd>
+
+                            <dt class="col-sm-4">State:</dt>
+                            <dd class="col-sm-8" th:text="${record.state}">State</dd>
+
+                            <dt class="col-sm-4">Event:</dt>
+                            <dd class="col-sm-8" th:text="${record.event}">Event</dd>
+
+                            <dt class="col-sm-4">Alert Time:</dt>
+                            <dd class="col-sm-8" th:text="${record.alertCreationTime}">Time</dd>
+
+                            <dt class="col-sm-4">Area:</dt>
+                            <dd class="col-sm-8" th:text="${record.areaDescription}">Area</dd>
+
+                            <dt class="col-sm-4">Sl No.:</dt>
+                            <dd class="col-sm-8" th:text="${record.slNo}">Sl No</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card mb-3" th:if="${record.cellCount != null or record.subscriberCount != null or record.smsCount != null}">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Metrics</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4" th:if="${record.cellCount != null}">Cell Count:</dt>
+                            <dd class="col-sm-8" th:if="${record.cellCount != null}" th:text="${#numbers.formatInteger(record.cellCount, 0, 'COMMA')}">Count</dd>
+
+                            <dt class="col-sm-4" th:if="${record.subscriberCount != null}">Subscriber Count:</dt>
+                            <dd class="col-sm-8" th:if="${record.subscriberCount != null}" th:text="${#numbers.formatInteger(record.subscriberCount, 0, 'COMMA')}">Count</dd>
+
+                            <dt class="col-sm-4" th:if="${record.smsCount != null}">SMS Count:</dt>
+                            <dd class="col-sm-8" th:if="${record.smsCount != null}" th:text="${#numbers.formatInteger(record.smsCount, 0, 'COMMA')}">Count</dd>
+
+                            <dt class="col-sm-4" th:if="${record.disseminationDurationSeconds != null}">Dissemination Duration:</dt>
+                            <dd class="col-sm-8" th:if="${record.disseminationDurationSeconds != null}" th:text="${record.disseminationDurationSeconds} + ' seconds'">Duration</dd>
+
+                            <dt class="col-sm-4" th:if="${record.feedbackDelaySeconds != null}">Feedback Delay:</dt>
+                            <dd class="col-sm-8" th:if="${record.feedbackDelaySeconds != null}" th:text="${record.feedbackDelaySeconds} + ' seconds'">Delay</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reason & Parameters -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Detection Reason</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0" th:text="${record.reason}">Reason why this was flagged</p>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-cog"></i> Relevant Parameters</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0" th:text="${record.relevantParameters}">Parameters used in detection</p>
+                    </div>
+                </div>
+
+                <div class="card mb-3" th:if="${record.note != null and !#strings.isEmpty(record.note)}">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0"><i class="fas fa-sticky-note"></i> Additional Notes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-0" th:utext="${#strings.replace(record.note, '&#10;', '&lt;br/&gt;')}">
+                            Notes
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <a th:href="@{/}" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Back to Dashboard
+                        </a>
+                        <a th:href="@{/alert/{id}(id=${record.alertId})}" class="btn btn-info">
+                            <i class="fas fa-bell"></i> View Full Alert
+                        </a>
+                        <a th:href="@{/category/{type}(type=${record.discrepancyType})}" class="btn btn-secondary">
+                            <i class="fas fa-list"></i> View All in Category
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

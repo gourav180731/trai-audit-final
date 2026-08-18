@@ -1,0 +1,21 @@
+Total alerts parsed: 787
+Total TSP rows parsed: 3935
+
+Check #1 Complete failure: 927 rows flagged
+Check #2 Feedback not received: 627 rows flagged
+Check #3 Feedback delay > 10min: 289 rows flagged
+Check #4 Pre-fetch MRAD breach: 147 rows flagged
+Check #5 Duration MRAD breach: 571 rows flagged
+
+TRAI circles parsed: 22 -> ['Andhra Pradesh', 'Assam', 'Bihar', 'Delhi', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'J & K', 'Karnataka', 'Kerala', 'Kolkata', 'Madhya Pradesh', 'Maharashtra', 'Mumbai', 'North East', 'Odisha', 'Punjab', 'Rajasthan', 'Tamil Nadu', 'U.P.(E)', 'U.P.(W)', 'West Bengal']
+Check #6 Subscriber ratio breach: 479 rows flagged
+Check #6 alerts with no usable state->circle mapping: 169
+  breakdown: Counter({'Uttar Pradesh': 160, 'Andaman and Nicobar Islands': 9})
+
+--- Sample flagged rows ---
+Check1 sample: [('1', 'Andhra Pradesh', 'MTNL'), ('1', 'Andhra Pradesh', 'Vodafone Idea'), ('2', 'Uttarakhand', 'MTNL')]
+Check2 sample: [('1', 'Andhra Pradesh', 'Airtel'), ('2', 'Uttarakhand', 'Airtel'), ('2', 'Uttarakhand', 'Vodafone Idea')]
+Check3 sample: [('5', 'Assam', 'Reliance Jio', '13m 7s'), ('6', 'Assam', 'Reliance Jio', '12m 25s'), ('8', 'Andhra Pradesh', 'Reliance Jio', '11m 43s')]
+Check4 sample: [('5', 'Assam', 'Vodafone Idea', 18, '2h 18m 1s'), ('6', 'Assam', 'Vodafone Idea', 114, '2h 21m 6s'), ('8', 'Andhra Pradesh', 'Vodafone Idea', 1019, '1h 3m 0s')]
+Check5 sample: [('1', 'Andhra Pradesh', 'Airtel', 75, '9h 17m 43s'), ('2', 'Uttarakhand', 'Airtel', 4154, '10h 23m 37s'), ('3', 'Uttarakhand', 'Airtel', 107, '10h 30m 23s')]
+Check6 sample: [('1', 'Andhra Pradesh', 'Reliance Jio', 71.91, 36.9, 35.01), ('6', 'Assam', 'Reliance Jio', 51.05, 34.29, 16.75), ('8', 'Andhra Pradesh', 'Reliance Jio', 57.44, 36.9, 20.54)]

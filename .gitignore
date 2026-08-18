@@ -1,0 +1,33 @@
+# Build outputs
+target/
+out/
+*.jar
+*.war
+*.ear
+*.class
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Database files
+data/*.db
+data/*.lock.db
+data/*.trace.db
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Maven wrapper
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# Keep maven wrapper jar
+!maven-wrapper.jar

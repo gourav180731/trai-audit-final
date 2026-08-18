@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAI SMS Dissemination Audit - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-chart-line"></i> TRAI SMS Dissemination Audit System
+            </span>
+            <div>
+                <a class="btn btn-light me-2" th:href="@{/upload}">
+                    <i class="fas fa-upload"></i> Upload Files
+                </a>
+                <a class="btn btn-outline-light" th:href="@{/search}">
+                    <i class="fas fa-search"></i> Search
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Alert Messages -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${batch == null}" class="text-center mt-5">
+            <h3>No data available</h3>
+            <p class="text-muted">Please upload Warning Report and TRAI Baseline files to begin</p>
+            <a th:href="@{/upload}" class="btn btn-primary btn-lg mt-3">
+                <i class="fas fa-upload"></i> Upload Files Now
+            </a>
+        </div>
+
+        <div th:if="${batch != null}">
+            <!-- Summary Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Total Alerts Processed</h6>
+                            <h2 class="card-title" th:text="${summary.totalAlertsProcessed}">0</h2>
+                            <small class="text-muted">From latest ingestion</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Alerts with Discrepancies</h6>
+                            <h2 class="card-title text-warning" th:text="${summary.totalAlertsWithDiscrepancies}">0</h2>
+                            <small class="text-muted">Unique alerts flagged</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-danger">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Total Discrepancy Instances</h6>
+                            <h2 class="card-title text-danger" th:text="${summary.totalDiscrepancyInstances}">0</h2>
+                            <small class="text-muted">Across all categories</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-info">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">TSP Rows Processed</h6>
+                            <h2 class="card-title text-info" th:text="${summary.totalTspRowsProcessed}">0</h2>
+                            <small class="text-muted">Individual TSP responses</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download by TSP Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-download"></i> Download TSP-Wise Reports</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">
+                                Generate Excel reports matching sir's manual format. Each TSP gets one .xlsx file with stacked sections per category.
+                            </p>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <a th:href="@{/reports/download-all-tsp(batchId=${batch.id})}" 
+                                       class="btn btn-success btn-lg w-100"
+                                       download>
+                                        <i class="fas fa-file-archive"></i> Download All TSPs (ZIP)
+                                    </a>
+                                    <small class="text-muted d-block mt-1">
+                                        Downloads 4 files: Airtel, BSNL, Vodafone Idea, Reliance Jio
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="btn-group w-100" role="group">
+                                        <button type="button" class="btn btn-outline-success dropdown-toggle btn-lg" 
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-file-excel"></i> Download Single TSP
+                                        </button>
+                                        <ul class="dropdown-menu w-100">
+                                            <li>
+                                                <a class="dropdown-item" 
+                                                   th:href="@{/reports/download-tsp(tsp='Airtel',batchId=${batch.id})}">
+                                                    <i class="fas fa-download"></i> Airtel
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" 
+                                                   th:href="@{/reports/download-tsp(tsp='BSNL',batchId=${batch.id})}">
+                                                    <i class="fas fa-download"></i> BSNL
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" 
+                                                   th:href="@{/reports/download-tsp(tsp='Vodafone Idea',batchId=${batch.id})}">
+                                                    <i class="fas fa-download"></i> Vodafone Idea
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" 
+                                                   th:href="@{/reports/download-tsp(tsp='Reliance Jio',batchId=${batch.id})}">
+                                                    <i class="fas fa-download"></i> Reliance Jio
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">
+                                        Select specific TSP to download
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Format:</strong> Reports match sir's exact manual layout with stacked sections. 
+                                Filename: <code>&lt;TSP&gt;_Discrepancies_&lt;start_date&gt;_-_&lt;end_date&gt;.xlsx</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discrepancy Categories Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-list"></i> Discrepancy Categories (9 Types, 12 Sub-categories)</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%">#</th>
+                                        <th style="width: 40%">Category</th>
+                                        <th style="width: 15%" class="text-end">Count</th>
+                                        <th style="width: 40%">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>
+                                            <a th:href="@{/category/COMPLETE_FAILURE(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Alert Dissemination Complete Failure</strong>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-danger" th:text="${batch.countCompleteFailure}">0</span>
+                                        </td>
+                                        <td><small>TSP sent nothing (Cell Count + Duration both "--")</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2a</td>
+                                        <td>
+                                            <a th:href="@{/category/ZERO_SUBSCRIBER_WITH_CELL_COUNT(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Zero Subscriber Count</strong> <em>(WITH Cell Count)</em>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-warning" th:text="${batch.countZeroSubscriberWithCellCount}">0</span>
+                                        </td>
+                                        <td><small>Cell Count present but Subscriber Count zero/missing</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2b</td>
+                                        <td>
+                                            <a th:href="@{/category/ZERO_SUBSCRIBER_WITHOUT_CELL_COUNT(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Zero Subscriber Count</strong> <em>(WITHOUT Cell Count)</em>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-warning" th:text="${batch.countZeroSubscriberWithoutCellCount}">0</span>
+                                        </td>
+                                        <td><small>Both missing (overlaps with #1 intentionally)</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>3a</td>
+                                        <td>
+                                            <a th:href="@{/category/STATISTICS_PENDING(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Statistics Pending</strong> <em>(recent)</em>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-info" th:text="${batch.countStatisticsPending}">0</span>
+                                        </td>
+                                        <td><small>"Awaited" and alert is recent (expected)</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>3b</td>
+                                        <td>
+                                            <a th:href="@{/category/STATISTICS_AWAITED(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Statistics Awaited</strong> <em>(overdue)</em>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-warning" th:text="${batch.countStatisticsAwaited}">0</span>
+                                        </td>
+                                        <td><small>"Awaited" but alert is old (more serious)</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>3c</td>
+                                        <td>
+                                            <a th:href="@{/category/DELTA_PENDING(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Delta Pending</strong> <em>(pre-fetch)</em>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-info" th:text="${batch.countDeltaPending}">0</span>
+                                        </td>
+                                        <td><small>Carries "**" marker, live confirmation pending</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td>
+                                            <a th:href="@{/category/FEEDBACK_DELAY_EXCEEDS_THRESHOLD(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Feedback Delay &gt; Threshold</strong>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-danger" th:text="${batch.countFeedbackDelayExceeds}">0</span>
+                                        </td>
+                                        <td><small>&gt; 10 minutes (see README NEEDS_SIGN_OFF #1)</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td>
+                                        <td>
+                                            <a th:href="@{/category/PREFETCH_DURATION_MATRIX_BREACH(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Pre-fetch Duration Matrix Breach</strong>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-danger" th:text="${batch.countPrefetchDurationBreach}">0</span>
+                                        </td>
+                                        <td><small>Pre-fetch rows exceeding MRAD thresholds</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>6</td>
+                                        <td>
+                                            <a th:href="@{/category/TOTAL_DURATION_MATRIX_BREACH(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Total Duration Matrix Breach</strong>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-danger" th:text="${batch.countTotalDurationBreach}">0</span>
+                                        </td>
+                                        <td><small>All rows exceeding MRAD thresholds</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>7</td>
+                                        <td>
+                                            <a th:href="@{/category/INORDINATE_SUBSCRIBER_RATIO(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Inordinate Subscriber Ratio</strong>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-warning" th:text="${batch.countInordinateRatio}">0</span>
+                                        </td>
+                                        <td><small>Deviates from TRAI baseline by &gt; 15% (see README NEEDS_SIGN_OFF #3)</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>8</td>
+                                        <td>
+                                            <a th:href="@{/category/DISSEMINATION_COMPLETED_ZERO_PREFETCH(batchId=${batch.id})}" class="text-decoration-none">
+                                                <strong>Dissemination Completed, Zero Pre-fetch</strong>
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-warning" th:text="${batch.countDisseminationCompletedZeroPrefetch}">0</span>
+                                        </td>
+                                        <td><small>Alert total &gt; 0 but TSP pre-fetch is zero (NEW, see README NEEDS_SIGN_OFF #5)</small></td>
+                                    </tr>
+                                    <tr>
+                                        <td>9</td>
+                                        <td>
+                                            <span class="text-muted">
+                                                <strong>Disseminated After Expiry Time</strong>
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-secondary" data-bs-toggle="tooltip" 
+                                                  title="Blocked: Alert Expiry Time data source not available. See README NEEDS_SIGN_OFF #6">
+                                                N/A
+                                            </span>
+                                        </td>
+                                        <td><small><em>BLOCKED - data source missing (see README NEEDS_SIGN_OFF #6)</em></small></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Note:</strong> See <code>WEB_APP_README.md</code> section "NEEDS_SIGN_OFF FROM SIR" for 6 items requiring DoT/NDMA confirmation before production use.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Info -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Latest Ingestion Batch</h6>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">Ingestion Time:</dt>
+                                <dd class="col-sm-9" th:text="${#temporals.format(batch.ingestionTime, 'dd-MM-yyyy HH:mm:ss')}"></dd>
+                                
+                                <dt class="col-sm-3">Warning Report:</dt>
+                                <dd class="col-sm-9" th:text="${batch.warningReportFilename}"></dd>
+                                
+                                <dt class="col-sm-3">TRAI Baseline:</dt>
+                                <dd class="col-sm-9" th:text="${batch.traiBaselineFilename}"></dd>
+                                
+                                <dt class="col-sm-3">Status:</dt>
+                                <dd class="col-sm-9">
+                                    <span class="badge bg-success" th:text="${batch.status}"></span>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-3 bg-light text-center">
+        <small class="text-muted">
+            TRAI SMS Dissemination Audit System v1.0 | 
+            Reuses validated CLI detection engine logic | 
+            See <code>WEB_APP_README.md</code> for full documentation
+        </small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Files - TRAI Audit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-chart-line"></i> TRAI SMS Dissemination Audit System
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-upload"></i> Upload Input Files</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Error Message -->
+                        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+
+                        <!-- Instructions -->
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Required Files</h6>
+                            <ol class="mb-0">
+                                <li><strong>Warning Detailed Report</strong> (<code>WarningDetailedReport_*.xlsx</code>)
+                                    <br><small>CAP Sachet Report with alert and TSP response data</small>
+                                </li>
+                                <li><strong>TRAI Wireless Subscriber Base</strong> (<code>TRAI_Wireless_Subscriber_Base.xlsx</code>)
+                                    <br><small>TRAI telecom circle subscriber market share data</small>
+                                </li>
+                            </ol>
+                        </div>
+
+                        <!-- Upload Form -->
+                        <form method="post" th:action="@{/upload}" enctype="multipart/form-data">
+                            <div class="mb-4">
+                                <label for="warningReport" class="form-label">
+                                    <i class="fas fa-file-excel text-success"></i> 
+                                    <strong>1. Warning Detailed Report (.xlsx)</strong>
+                                </label>
+                                <input type="file" 
+                                       class="form-control" 
+                                       id="warningReport" 
+                                       name="warningReport" 
+                                       accept=".xlsx"
+                                       required>
+                                <div class="form-text">
+                                    Sheet "CAP Sachet Report" with columns: Sl No., Organization, Event, TSP, Cell Count, etc.
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="traiBaseline" class="form-label">
+                                    <i class="fas fa-file-excel text-success"></i> 
+                                    <strong>2. TRAI Wireless Subscriber Base (.xlsx)</strong>
+                                </label>
+                                <input type="file" 
+                                       class="form-control" 
+                                       id="traiBaseline" 
+                                       name="traiBaseline" 
+                                       accept=".xlsx"
+                                       required>
+                                <div class="form-text">
+                                    First sheet with Service Area rows and May-26/Jun-26 operator columns
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-cogs"></i> Process Files and Detect Discrepancies
+                                </button>
+                                <a th:href="@{/}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            </div>
+                        </form>
+
+                        <!-- Processing Info -->
+                        <div class="alert alert-warning mt-4">
+                            <h6><i class="fas fa-clock"></i> Processing Time</h6>
+                            <p class="mb-0">
+                                For typical files (700-800 alerts, 3000-4000 TSP rows), processing takes 5-15 seconds.
+                                You will be redirected to the dashboard when complete.
+                            </p>
+                        </div>
+
+                        <!-- Regression Baseline Info -->
+                        <div class="card mt-4 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-check-double"></i> Regression Baseline Validation</h6>
+                            </div>
+                            <div class="card-body">
+                                <p>
+                                    If you upload the validated test files 
+                                    (<code>WarningDetailedReport_2026-08-11_9_56.xlsx</code> + 
+                                    <code>TRAI_Wireless_Subscriber_Base.xlsx</code>), 
+                                    the system will automatically verify these counts:
+                                </p>
+                                <ul class="mb-0">
+                                    <li>Total alerts: <strong>787</strong></li>
+                                    <li>Total TSP rows: <strong>3,935</strong></li>
+                                    <li>Category 5 (Pre-fetch Duration): <strong>147 flagged</strong></li>
+                                    <li>Category 6 (Total Duration): <strong>571 flagged</strong></li>
+                                    <li>Category 7 (Subscriber Ratio): <strong>479 flagged</strong></li>
+                                </ul>
+                                <small class="text-muted">Check console logs for regression validation output.</small>
+                            </div>
+                        </div>
+
+                        <!-- Detection Categories Info -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-list-check"></i> 9 Discrepancy Categories Detected</h6>
+                            </div>
+                            <div class="card-body">
+                                <ol class="mb-0 small">
+                                    <li>Alert Dissemination Complete Failure</li>
+                                    <li>Zero Subscriber Count (2 sub-categories: WITH/WITHOUT Cell Count)</li>
+                                    <li>SMS Dissemination Feedback Not Received (3 sub-categories: Pending/Awaited/Delta)</li>
+                                    <li>Feedback Delay Greater Than Threshold (10 minutes)</li>
+                                    <li>Pre-Fetch Dissemination Duration Not Following DoT Matrix</li>
+                                    <li>Total Dissemination Duration Too High per Cell Count</li>
+                                    <li>Inordinate Subscriber Count Ratio vs TRAI Baseline</li>
+                                    <li>Dissemination Completed but Pre-Fetch Shows Zero <em>(NEW)</em></li>
+                                    <li>Alerts Disseminated After Expiry Time <em>(BLOCKED - data source missing)</em></li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important Notes -->
+                <div class="alert alert-secondary mt-4">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Important Notes</h6>
+                    <ul class="mb-0">
+                        <li><strong>6 items require sign-off</strong> from DoT/NDMA officials before production use. 
+                            See <code>WEB_APP_README.md</code> section "NEEDS_SIGN_OFF FROM SIR".</li>
+                        <li>All thresholds (feedback delay, ratio deviation, recency window) are configurable 
+                            in <code>application.properties</code>.</li>
+                        <li>This detection engine reuses 100% of the validated CLI tool's parsing and business logic.</li>
+                        <li>Database persists all batches and discrepancies for historical trend analysis.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-3 bg-light text-center">
+        <small class="text-muted">
+            TRAI SMS Dissemination Audit System v1.0 | Built with Spring Boot + H2 Database
+        </small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Show loading indicator on form submit
+        document.querySelector('form').addEventListener('submit', function() {
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing files, please wait...';
+        });
+    </script>
+</body>
+</html>
