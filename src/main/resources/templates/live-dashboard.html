@@ -10,9 +10,8 @@
 <body>
 <nav class="navbar navbar-dark bg-primary">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/live"><i class="fas fa-broadcast-tower"></i> TSP Compliance Monitor — <small>Live PostgreSQL</small></a>
+        <a class="navbar-brand" href="/"><i class="fas fa-broadcast-tower"></i> TSP Compliance Monitor — <small>Live PostgreSQL</small></a>
         <div>
-            <a class="btn btn-light btn-sm" href="/"><i class="fas fa-chart-line"></i> Legacy Dashboard</a>
             <a class="btn btn-outline-light btn-sm" href="/search"><i class="fas fa-search"></i> Search</a>
         </div>
     </div>
@@ -89,9 +88,13 @@
 
     <div th:if="${latestBatch == null}" class="alert alert-info">No live batches yet — use <strong>Generate Report</strong> above to run the first live scan.</div>
 
-    <div class="card"><div class="card-header"><h6 class="mb-0">Recent Batches</h6></div><div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>ID</th><th>Time</th><th>Filter</th><th>Alerts</th><th>Rows</th><th>Discrepancies</th><th>Status</th></tr></thead><tbody><tr th:each="b : ${recentBatches}"><td th:text="${b.id}"></td><td th:text="${b.ingestionTime}"></td><td th:text="${b.tspFilter} ?: 'ALL'"></td><td th:text="${b.totalAlertsProcessed}"></td><td th:text="${b.totalTspRowsProcessed}"></td><td th:text="${b.totalDiscrepancyInstances}"></td><td><span class="badge" th:classappend="${b.status.name()=='COMPLETED'} ? 'bg-success' : 'bg-danger'" th:text="${b.status}"></span></td></tr></tbody></table></div></div>
+     <div class="card"><div class="card-header"><h6 class="mb-0">Recent Batches</h6></div><div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>ID</th><th>Time</th><th>Filter</th><th>Alerts</th><th>Rows</th><th>Discrepancies</th><th>Status</th></tr></thead><tbody><tr th:each="b : ${recentBatches}"><td th:text="${b.id}"></td><td th:text="${b.ingestionTime}"></td><td th:text="${b.tspFilter} ?: 'ALL'"></td><td th:text="${b.totalAlertsProcessed}"></td><td th:text="${b.totalTspRowsProcessed}"></td><td th:text="${b.totalDiscrepancyInstances}"></td><td><span class="badge" th:classappend="${b.status.name()=='COMPLETED'} ? 'bg-success' : 'bg-danger'" th:text="${b.status}"></span></td></tr></tbody></table></div></div>
 
-</div>
+     <div class="text-center mt-4 mb-2">
+         <small class="text-muted">Need the old workflow? <a th:href="@{/upload}" class="text-muted text-decoration-underline">Import legacy Excel report (deprecated)</a> — direct URL only, not part of the live flow.</small>
+     </div>
+
+ </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

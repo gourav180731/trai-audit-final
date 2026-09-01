@@ -23,29 +23,11 @@ public class DashboardController {
     private final DiscrepancySearchService searchService;
 
     @GetMapping("/")
-    public String dashboard(Model model) {
-        try {
-            // Get latest batch for dashboard display
-            IngestionBatch latestBatch = dashboardService.getLatestCompletedBatch();
-            
-            if (latestBatch != null) {
-                model.addAttribute("batch", latestBatch);
-                model.addAttribute("summary", dashboardService.getDashboardSummary(latestBatch.getId()));
-                model.addAttribute("tspWiseCount", dashboardService.getTspWiseCount(latestBatch.getId()));
-                model.addAttribute("categoryWiseCount", dashboardService.getCategoryWiseCount(latestBatch.getId()));
-                model.addAttribute("dateWiseTrend", dashboardService.getDateWiseTrend(30)); // Last 30 days
-            } else {
-                // No batches yet - set null to show "no data" message
-                model.addAttribute("batch", null);
-            }
-            
-            model.addAttribute("recentBatches", dashboardService.getRecentBatches(10));
-        } catch (Exception e) {
-            // Handle any errors gracefully
-            model.addAttribute("batch", null);
-            model.addAttribute("error", "Error loading dashboard: " + e.getMessage());
-        }
-        return "dashboard";
+    public String dashboard() {
+        // Single dashboard — live DB only. Old Excel upload flow was confusing as default.
+        // Keep the original dashboard.html reachable only via direct legacy link if needed,
+        // but the root path now lands directly on the live Generate Report / Send Email UI.
+        return "redirect:/live";
     }
 
     @GetMapping("/category/{type}")

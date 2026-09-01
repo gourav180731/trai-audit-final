@@ -28,6 +28,9 @@ public class SearchController {
         model.addAttribute("discrepancyTypes", DiscrepancyRecord.DiscrepancyType.values());
         model.addAttribute("statuses", DiscrepancyRecord.DiscrepancyStatus.values());
         model.addAttribute("tsps", new String[]{"Airtel", "BSNL", "MTNL", "Reliance Jio", "Vodafone Idea"});
+        model.addAttribute("searchPerformed", false);
+        model.addAttribute("results", List.of());
+        model.addAttribute("resultCount", 0);
         return "search";
     }
 
