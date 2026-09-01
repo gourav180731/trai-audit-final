@@ -108,6 +108,9 @@ public class DiscrepancyRecord {
     @Column(nullable = false)
     private Long ingestionBatchId;
 
+    // Traceability back to live dm row
+    private Long sourceRowId;
+
     public enum DiscrepancyStatus {
         OPEN,
         ACKNOWLEDGED,
@@ -117,34 +120,21 @@ public class DiscrepancyRecord {
     }
 
     public enum DiscrepancyType {
-        // Category 1
+        // Live 7 checks (current)
         COMPLETE_FAILURE,
-        
-        // Category 2 - split into 2 sub-categories
+        STATISTICS_PENDING, // used for feedback_not_received (generic)
+        FEEDBACK_DELAY_EXCEEDS_THRESHOLD,
+        PREFETCH_DURATION_MATRIX_BREACH,
+        TOTAL_DURATION_MATRIX_BREACH,
+        INORDINATE_SUBSCRIBER_RATIO,
+        EXPIRED_NONZERO,
+        ARITHMETIC_MISMATCH,
+        // Legacy Excel-era sub-categories (kept for backward compat / dashboard)
         ZERO_SUBSCRIBER_WITH_CELL_COUNT,
         ZERO_SUBSCRIBER_WITHOUT_CELL_COUNT,
-        
-        // Category 3 - split into 3 sub-categories
-        STATISTICS_PENDING,
         STATISTICS_AWAITED,
         DELTA_PENDING,
-        
-        // Category 4
-        FEEDBACK_DELAY_EXCEEDS_THRESHOLD,
-        
-        // Category 5
-        PREFETCH_DURATION_MATRIX_BREACH,
-        
-        // Category 6
-        TOTAL_DURATION_MATRIX_BREACH,
-        
-        // Category 7
-        INORDINATE_SUBSCRIBER_RATIO,
-        
-        // Category 8 - NEW
         DISSEMINATION_COMPLETED_ZERO_PREFETCH,
-        
-        // Category 9 - NEW (blocked on data)
         DISSEMINATED_AFTER_EXPIRY
     }
 }

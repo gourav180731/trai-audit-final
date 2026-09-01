@@ -97,9 +97,7 @@ public class TspReportGenerationService {
         // Row 2: Blank
         currentRow++;
 
-        // Generate sections in consistent order (Expiry Time always first per sir's files)
-        // Fixed order for consistency: Expiry → Complete Failure → Zero Subscriber → 
-        // Statistics → Delta → Dissemination Delay → Subscriber Ratio → Zero Prefetch
+        // Generate sections in consistent order — live 7 checks + legacy compat
         currentRow = addExpirySection(sheet, allRecords, currentRow, sectionHeaderStyle, columnHeaderStyle, dataStyle);
         currentRow = addCompleteFailureSection(sheet, allRecords, currentRow, sectionHeaderStyle, columnHeaderStyle, dataStyle, remarksStyle);
         currentRow = addZeroSubscriberSection(sheet, allRecords, currentRow, sectionHeaderStyle, columnHeaderStyle, dataStyle, remarksStyle);
@@ -108,6 +106,8 @@ public class TspReportGenerationService {
         currentRow = addDisseminationDelaySection(sheet, allRecords, currentRow, sectionHeaderStyle, columnHeaderStyle, dataStyle, remarksStyle);
         currentRow = addInordinateRatioSection(sheet, allRecords, currentRow, sectionHeaderStyle, columnHeaderStyle, dataStyle);
         currentRow = addZeroPrefetchSection(sheet, allRecords, currentRow, sectionHeaderStyle, columnHeaderStyle, dataStyle, remarksStyle);
+        currentRow = addExpiredNonZeroSection(sheet, allRecords, currentRow, sectionHeaderStyle, columnHeaderStyle, dataStyle);
+        currentRow = addArithmeticMismatchSection(sheet, allRecords, currentRow, sectionHeaderStyle, columnHeaderStyle, dataStyle);
 
         // Set column widths (approximate from sir's files)
         setColumnWidths(sheet);
@@ -782,6 +782,70 @@ public class TspReportGenerationService {
         for (int i = 0; i < widths.length; i++) {
             sheet.setColumnWidth(i, widths[i] * 256); // Excel width units * 256
         }
+    }
+
+    // --- New live-schema sections ---
+
+    private int addExpiredNonZeroSection(Sheet sheet, List<DiscrepancyRecord> allRecords, int startRow,
+                                         XSSFCellStyle sectionHeaderStyle, XSSFCellStyle columnHeaderStyle,
+                                         XSSFCellStyle dataStyle) {
+        List<DiscrepancyRecord> records = allRecords.stream()
+                .filter(r -> r.getDiscrepancyType() == DiscrepancyType.EXPIRED_NONZERO)
+                .collect(Collectors.toList());
+        if (records.isEmpty()) return startRow;
+        int currentRow = startRow;
+        Row sectionHeader = sheet.createRow(currentRow++);
+        Cell headerCell = sectionHeader.createCell(0);
+        headerCell.setCellValue("Expired Before Completion (total_expired / sms_count_expired > 0)");
+        headerCell.setCellStyle(sectionHeaderStyle);
+        sheet.addMergedRegion(new CellRangeAddress(currentRow - 1, currentRow - 1, 0, 6));
+        Row colHeaders = sheet.createRow(currentRow++);
+        String[] headers = {"S. No.", "Identifier", "TSP", "Start Time", "End Time", "Expired Count", "capPlatform Remarks"};
+        for (int i = 0; i < headers.length; i++) { Cell c = colHeaders.createCell(i); c.setCellValue(headers[i]); c.setCellStyle(columnHeaderStyle); }
+        int srNo = 1;
+        for (DiscrepancyRecord record : records) {
+            Row dataRow = sheet.createRow(currentRow++);
+            createDataCell(dataRow, 0, srNo++, dataStyle);
+            createDataCell(dataRow, 1, record.getAlertId(), dataStyle);
+            createDataCell(dataRow, 2, record.getTsp(), dataStyle);
+            createDataCell(dataRow, 3, formatDateTime(record.getAlertCreationTime()), dataStyle);
+            createDataCell(dataRow, 4, formatDateTime(extractFromRelevantParams(record, "end_time")), dataStyle);
+            createDataCell(dataRow, 5, record.getActualValue(), dataStyle);
+            createDataCell(dataRow, 6, record.getNote(), dataStyle);
+        }
+        currentRow++;
+        return currentRow;
+    }
+
+    private int addArithmeticMismatchSection(Sheet sheet, List<DiscrepancyRecord> allRecords, int startRow,
+                                             XSSFCellStyle sectionHeaderStyle, XSSFCellStyle columnHeaderStyle,
+                                             XSSFCellStyle dataStyle) {
+        List<DiscrepancyRecord> records = allRecords.stream()
+                .filter(r -> r.getDiscrepancyType() == DiscrepancyType.ARITHMETIC_MISMATCH)
+                .collect(Collectors.toList());
+        if (records.isEmpty()) return startRow;
+        int currentRow = startRow;
+        Row sectionHeader = sheet.createRow(currentRow++);
+        Cell headerCell = sectionHeader.createCell(0);
+        headerCell.setCellValue("Data Integrity — Arithmetic Mismatch (success+failure+expired != total_subscribers)");
+        headerCell.setCellStyle(sectionHeaderStyle);
+        sheet.addMergedRegion(new CellRangeAddress(currentRow - 1, currentRow - 1, 0, 6));
+        Row colHeaders = sheet.createRow(currentRow++);
+        String[] headers = {"S. No.", "Identifier", "TSP", "Actual (success+failure+expired)", "Expected (total_subscribers)", "Deviation", "Reason"};
+        for (int i = 0; i < headers.length; i++) { Cell c = colHeaders.createCell(i); c.setCellValue(headers[i]); c.setCellStyle(columnHeaderStyle); }
+        int srNo = 1;
+        for (DiscrepancyRecord record : records) {
+            Row dataRow = sheet.createRow(currentRow++);
+            createDataCell(dataRow, 0, srNo++, dataStyle);
+            createDataCell(dataRow, 1, record.getAlertId(), dataStyle);
+            createDataCell(dataRow, 2, record.getTsp(), dataStyle);
+            createDataCell(dataRow, 3, record.getActualValue(), dataStyle);
+            createDataCell(dataRow, 4, record.getExpectedValue(), dataStyle);
+            createDataCell(dataRow, 5, record.getDeviation(), dataStyle);
+            createDataCell(dataRow, 6, record.getReason(), dataStyle);
+        }
+        currentRow++;
+        return currentRow;
     }
 
     public String generateFilename(String tsp, LocalDateTime startDate, LocalDateTime endDate) {

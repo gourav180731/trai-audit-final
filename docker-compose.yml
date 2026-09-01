@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: trai_audit
+      POSTGRES_USER: trai_user
+      POSTGRES_PASSWORD: trai_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+volumes:
+  pgdata:

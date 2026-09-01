@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Compliance Monitor — CAP Sachet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/live"><i class="fas fa-broadcast-tower"></i> TSP Compliance Monitor — <small>Live PostgreSQL</small></a>
+        <div>
+            <a class="btn btn-light btn-sm" href="/"><i class="fas fa-chart-line"></i> Legacy Dashboard</a>
+            <a class="btn btn-outline-light btn-sm" href="/search"><i class="fas fa-search"></i> Search</a>
+        </div>
+    </div>
+</nav>
+<div class="container-fluid mt-4">
+
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle"></i> <span th:text="${success}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+
+    <!-- Generate Report — Click 1 -->
+    <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white"><h5 class="mb-0"><i class="fas fa-file-excel"></i> Generate Report — Step 1 of 2</h5></div>
+        <div class="card-body">
+            <p class="text-muted">Runs all 7 live checks directly against <code>dm.t_tsp_sms_dissemination_statistics</code>. No file upload. Filters are optional — leave blank to scan all data.</p>
+            <form method="post" th:action="@{/live/generate}" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Date From (start_time)</label>
+                    <input type="date" name="dateFrom" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date To</label>
+                    <input type="date" name="dateTo" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">TSP filter</label>
+                    <select name="tspFilter" class="form-select">
+                        <option value="">— All TSPs —</option>
+                        <option value="Airtel">Airtel</option>
+                        <option value="BSNL">BSNL</option>
+                        <option value="Vodafone Idea">Vodafone Idea (matches Vodafone-Idea)</option>
+                        <option value="Reliance Jio">Reliance Jio</option>
+                        <option value="MTNL">MTNL</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Triggered by (audit)</label>
+                    <input type="text" name="triggeredBy" class="form-control" placeholder="your name / system">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-success btn-lg"><i class="fas fa-cogs"></i> Generate Report</button>
+                    <small class="text-muted ms-2">This will run live SQL, persist discrepancies, and show a preview with a download link and a <strong>Send Email</strong> button (Step 2).</small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Latest batch summary -->
+    <div th:if="${latestBatch != null}" class="row g-3 mb-4">
+        <div class="col-md-3"><div class="card border-primary"><div class="card-body"><h6 class="card-subtitle mb-2 text-muted">Total Alerts (distinct identifier)</h6><h2 th:text="${latestBatch.totalAlertsProcessed}">0</h2><small class="text-muted" th:text="'Batch #' + ${latestBatch.id} + ' at ' + ${latestBatch.ingestionTime}"></small></div></div></div>
+        <div class="col-md-3"><div class="card border-warning"><div class="card-body"><h6 class="card-subtitle mb-2 text-muted">TSP Rows Scanned</h6><h2 th:text="${latestBatch.totalTspRowsProcessed}">0</h2><small class="text-muted" th:text="'Filter: ' + (${latestBatch.tspFilter} ?: 'ALL')"></small></div></div></div>
+        <div class="col-md-3"><div class="card border-danger"><div class="card-body"><h6 class="card-subtitle mb-2 text-muted">Discrepancies</h6><h2 class="text-danger" th:text="${latestBatch.totalDiscrepancyInstances}">0</h2><small class="text-muted" th:text="${latestBatch.totalAlertsWithDiscrepancies} + ' alerts affected'"></small></div></div></div>
+        <div class="col-md-3"><div class="card border-info"><div class="card-body"><h6 class="card-subtitle mb-2 text-muted">Status</h6><h2><span class="badge bg-success" th:text="${latestBatch.status}">COMPLETED</span></h2><small class="text-muted" th:text="${latestBatch.triggeredBy} ?: '—'"></small></div></div></div>
+    </div>
+
+    <!-- Category breakdown -->
+    <div th:if="${latestBatch != null}" class="card mb-4">
+        <div class="card-header bg-primary text-white"><h6 class="mb-0"><i class="fas fa-list"></i> 7 Live Checks — Counts for Latest Batch (#<span th:text="${latestBatch.id}"></span>)</h6></div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>#</th><th>Check</th><th class="text-end">Count</th><th>What it flags (live column)</th></tr></thead>
+                <tbody>
+                <tr><td>1</td><td>Complete dissemination failure</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countCompleteFailure}">0</span></td><td><small>start_time, end_time, response1/2 all NULL</small></td></tr>
+                <tr><td>2</td><td>Feedback / delta not received</td><td class="text-end"><span class="badge bg-warning" th:text="${latestBatch.countStatisticsPending}">0</span></td><td><small>end_time set but response2 NULL or delta_received != 'yes' with prefetch</small></td></tr>
+                <tr><td>3</td><td>Feedback delay &gt; threshold</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countFeedbackDelayExceeds}">0</span></td><td><small>response2 - end_time &gt; 600s (configurable)</small></td></tr>
+                <tr><td>4</td><td>Prefetch duration vs MRAD</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countPrefetchDurationBreach}">0</span></td><td><small>prefetch_end - prefetch_start vs cell-count band</small></td></tr>
+                <tr><td>5</td><td>Total duration vs MRAD</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countTotalDurationBreach}">0</span></td><td><small>end - start vs cell-count band; &gt;30k = beyond matrix</small></td></tr>
+                <tr><td>6</td><td>Inordinate subscriber ratio</td><td class="text-end"><span class="badge bg-warning" th:text="${latestBatch.countInordinateRatio}">0</span></td><td><small>Requires TRAI baseline + state mapping — see NEEDS_SIGN_OFF</small></td></tr>
+                <tr><td>7a</td><td>Expired non-zero</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countExpiredNonzero}">0</span></td><td><small>total_expired &gt;0 or sms_count_expired &gt;0</small></td></tr>
+                <tr><td>7b</td><td>Arithmetic mismatch</td><td class="text-end"><span class="badge bg-warning" th:text="${latestBatch.countArithmeticMismatch}">0</span></td><td><small>success+failure+expired != total_subscribers</small></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div th:if="${latestBatch == null}" class="alert alert-info">No live batches yet — use <strong>Generate Report</strong> above to run the first live scan.</div>
+
+    <div class="card"><div class="card-header"><h6 class="mb-0">Recent Batches</h6></div><div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>ID</th><th>Time</th><th>Filter</th><th>Alerts</th><th>Rows</th><th>Discrepancies</th><th>Status</th></tr></thead><tbody><tr th:each="b : ${recentBatches}"><td th:text="${b.id}"></td><td th:text="${b.ingestionTime}"></td><td th:text="${b.tspFilter} ?: 'ALL'"></td><td th:text="${b.totalAlertsProcessed}"></td><td th:text="${b.totalTspRowsProcessed}"></td><td th:text="${b.totalDiscrepancyInstances}"></td><td><span class="badge" th:classappend="${b.status.name()=='COMPLETED'} ? 'bg-success' : 'bg-danger'" th:text="${b.status}"></span></td></tr></tbody></table></div></div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -33,17 +33,29 @@ public class IngestionBatch {
     @Column(nullable = false, length = 500)
     private String traiBaselineFilename;
 
-    @Column(nullable = false)
-    private Integer totalAlertsProcessed;
+    // Live-DB run filters (nullable for legacy file runs)
+    private LocalDateTime dateFrom;
+    private LocalDateTime dateTo;
+    @Column(length = 200)
+    private String tspFilter;
+    @Column(length = 200)
+    private String triggeredBy;
 
+    @Builder.Default
     @Column(nullable = false)
-    private Integer totalTspRowsProcessed;
+    private Integer totalAlertsProcessed = 0;
 
+    @Builder.Default
     @Column(nullable = false)
-    private Integer totalAlertsWithDiscrepancies;
+    private Integer totalTspRowsProcessed = 0;
 
+    @Builder.Default
     @Column(nullable = false)
-    private Integer totalDiscrepancyInstances;
+    private Integer totalAlertsWithDiscrepancies = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer totalDiscrepancyInstances = 0;
 
     // Category-wise counts for dashboard
     private Integer countCompleteFailure;
@@ -58,6 +70,9 @@ public class IngestionBatch {
     private Integer countInordinateRatio;
     private Integer countDisseminationCompletedZeroPrefetch;
     private Integer countDisseminatedAfterExpiry;
+    // Check 7 (new, live-schema)
+    private Integer countExpiredNonzero;
+    private Integer countArithmeticMismatch;
 
     @Column(length = 50)
     @Enumerated(EnumType.STRING)
