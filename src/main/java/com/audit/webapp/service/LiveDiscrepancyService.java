@@ -172,9 +172,9 @@ public class LiveDiscrepancyService {
               AND s.end_time IS NULL
               AND s.response1_received_timestamp IS NULL
               AND s.response2_received_timestamp IS NULL
-              AND (:from IS NULL OR s.entry_time >= CAST(:from AS timestamp) OR s.start_time >= CAST(:from AS timestamp))
-              AND (:to   IS NULL OR s.entry_time <= CAST(:to   AS timestamp) OR s.start_time <= CAST(:to   AS timestamp))
-              AND (:tsp  IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
+              AND (CAST(:from AS timestamp) IS NULL OR s.entry_time >= CAST(:from AS timestamp) OR s.start_time >= CAST(:from AS timestamp))
+              AND (CAST(:to AS timestamp) IS NULL OR s.entry_time <= CAST(:to   AS timestamp) OR s.start_time <= CAST(:to   AS timestamp))
+              AND (CAST(:tsp AS varchar) IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
             ORDER BY s.identifier, s.tsp_name
             """;
         // For live DB the time filter must handle NULL start_time rows — use entry_time as fallback
@@ -196,9 +196,9 @@ public class LiveDiscrepancyService {
                     s.response2_received_timestamp IS NULL
                  OR (s.prefetch_start_time IS NOT NULL AND (s.delta_received IS NULL OR LOWER(s.delta_received) <> 'yes'))
               )
-              AND (:from IS NULL OR s.start_time >= CAST(:from AS timestamp))
-              AND (:to   IS NULL OR s.start_time <= CAST(:to   AS timestamp))
-              AND (:tsp  IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
+              AND (CAST(:from AS timestamp) IS NULL OR s.start_time >= CAST(:from AS timestamp))
+              AND (CAST(:to AS timestamp) IS NULL OR s.start_time <= CAST(:to   AS timestamp))
+              AND (CAST(:tsp AS varchar) IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
             ORDER BY s.identifier, s.tsp_name
             """;
         return queryToRows(sql, from, to, tspFilter, "FEEDBACK_NOT_RECEIVED",
@@ -216,9 +216,9 @@ public class LiveDiscrepancyService {
             WHERE s.end_time IS NOT NULL
               AND s.response2_received_timestamp IS NOT NULL
               AND EXTRACT(EPOCH FROM (s.response2_received_timestamp - s.end_time)) > """ + thr + """
-              AND (:from IS NULL OR s.start_time >= CAST(:from AS timestamp))
-              AND (:to   IS NULL OR s.start_time <= CAST(:to   AS timestamp))
-              AND (:tsp  IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
+              AND (CAST(:from AS timestamp) IS NULL OR s.start_time >= CAST(:from AS timestamp))
+              AND (CAST(:to AS timestamp) IS NULL OR s.start_time <= CAST(:to   AS timestamp))
+              AND (CAST(:tsp AS varchar) IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
             ORDER BY s.identifier, s.tsp_name
             """;
         List<DiscrepancyRow> rows = queryToRows(sql, from, to, tspFilter, "FEEDBACK_DELAY",
@@ -247,9 +247,9 @@ public class LiveDiscrepancyService {
             WHERE s.prefetch_start_time IS NOT NULL
               AND s.prefetch_end_time IS NOT NULL
               AND s.total_cell_count IS NOT NULL
-              AND (:from IS NULL OR s.start_time >= CAST(:from AS timestamp))
-              AND (:to   IS NULL OR s.start_time <= CAST(:to   AS timestamp))
-              AND (:tsp  IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
+              AND (CAST(:from AS timestamp) IS NULL OR s.start_time >= CAST(:from AS timestamp))
+              AND (CAST(:to AS timestamp) IS NULL OR s.start_time <= CAST(:to   AS timestamp))
+              AND (CAST(:tsp AS varchar) IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
             ORDER BY s.identifier, s.tsp_name
             """;
         List<DiscrepancyRow> candidates = queryToRows(sql, from, to, tspFilter, "PREFETCH_DURATION",
@@ -294,9 +294,9 @@ public class LiveDiscrepancyService {
             WHERE s.start_time IS NOT NULL
               AND s.end_time IS NOT NULL
               AND s.total_cell_count IS NOT NULL
-              AND (:from IS NULL OR s.start_time >= CAST(:from AS timestamp))
-              AND (:to   IS NULL OR s.start_time <= CAST(:to   AS timestamp))
-              AND (:tsp  IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
+              AND (CAST(:from AS timestamp) IS NULL OR s.start_time >= CAST(:from AS timestamp))
+              AND (CAST(:to AS timestamp) IS NULL OR s.start_time <= CAST(:to   AS timestamp))
+              AND (CAST(:tsp AS varchar) IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
             ORDER BY s.identifier, s.tsp_name
             """;
         List<DiscrepancyRow> candidates = queryToRows(sql, from, to, tspFilter, "TOTAL_DURATION", null, null);
@@ -347,9 +347,9 @@ public class LiveDiscrepancyService {
         String sql = """
             SELECT * FROM dm.t_tsp_sms_dissemination_statistics s
             WHERE (COALESCE(s.total_expired,0) > 0 OR COALESCE(s.sms_count_expired,0) > 0)
-              AND (:from IS NULL OR s.start_time >= CAST(:from AS timestamp) OR (s.start_time IS NULL AND s.entry_time >= CAST(:from AS timestamp)))
-              AND (:to   IS NULL OR s.start_time <= CAST(:to   AS timestamp) OR (s.start_time IS NULL AND s.entry_time <= CAST(:to   AS timestamp)))
-              AND (:tsp  IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
+              AND (CAST(:from AS timestamp) IS NULL OR s.start_time >= CAST(:from AS timestamp) OR (s.start_time IS NULL AND s.entry_time >= CAST(:from AS timestamp)))
+              AND (CAST(:to AS timestamp) IS NULL OR s.start_time <= CAST(:to   AS timestamp) OR (s.start_time IS NULL AND s.entry_time <= CAST(:to   AS timestamp)))
+              AND (CAST(:tsp AS varchar) IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
             ORDER BY s.identifier, s.tsp_name
             """;
         List<DiscrepancyRow> rows = queryToRows(sql, from, to, tspFilter, "EXPIRED_NONZERO",
@@ -375,9 +375,9 @@ public class LiveDiscrepancyService {
                 COALESCE(s.total_delivery_success,0) + COALESCE(s.total_delivery_failure,0) + COALESCE(s.total_expired,0)
                 <> s.total_subscribers
               )
-              AND (:from IS NULL OR s.start_time >= CAST(:from AS timestamp) OR (s.start_time IS NULL AND s.entry_time >= CAST(:from AS timestamp)))
-              AND (:to   IS NULL OR s.start_time <= CAST(:to   AS timestamp) OR (s.start_time IS NULL AND s.entry_time <= CAST(:to   AS timestamp)))
-              AND (:tsp  IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
+              AND (CAST(:from AS timestamp) IS NULL OR s.start_time >= CAST(:from AS timestamp) OR (s.start_time IS NULL AND s.entry_time >= CAST(:from AS timestamp)))
+              AND (CAST(:to AS timestamp) IS NULL OR s.start_time <= CAST(:to   AS timestamp) OR (s.start_time IS NULL AND s.entry_time <= CAST(:to   AS timestamp)))
+              AND (CAST(:tsp AS varchar) IS NULL OR LOWER(REPLACE(s.tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))
             ORDER BY s.identifier, s.tsp_name
             """;
         List<DiscrepancyRow> rows = queryToRows(sql, from, to, tspFilter, "ARITHMETIC_MISMATCH",
@@ -470,7 +470,7 @@ public class LiveDiscrepancyService {
 
     private long countDistinct(LocalDateTime from, LocalDateTime to, String tsp) {
         try {
-            String sql = "SELECT COUNT(DISTINCT identifier) FROM dm.t_tsp_sms_dissemination_statistics WHERE (:from IS NULL OR start_time >= CAST(:from AS timestamp)) AND (:to IS NULL OR start_time <= CAST(:to AS timestamp)) AND (:tsp IS NULL OR LOWER(REPLACE(tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))";
+            String sql = "SELECT COUNT(DISTINCT identifier) FROM dm.t_tsp_sms_dissemination_statistics WHERE (CAST(:from AS timestamp) IS NULL OR start_time >= CAST(:from AS timestamp)) AND (CAST(:to AS timestamp) IS NULL OR start_time <= CAST(:to AS timestamp)) AND (CAST(:tsp AS varchar) IS NULL OR LOWER(REPLACE(tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))";
             Map<String,Object> p = new HashMap<>();
             p.put("from", from);
             p.put("to", to);
@@ -481,7 +481,7 @@ public class LiveDiscrepancyService {
     }
     private long countRows(LocalDateTime from, LocalDateTime to, String tsp) {
         try {
-            String sql = "SELECT COUNT(*) FROM dm.t_tsp_sms_dissemination_statistics WHERE (:from IS NULL OR start_time >= CAST(:from AS timestamp)) AND (:to IS NULL OR start_time <= CAST(:to AS timestamp)) AND (:tsp IS NULL OR LOWER(REPLACE(tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))";
+            String sql = "SELECT COUNT(*) FROM dm.t_tsp_sms_dissemination_statistics WHERE (CAST(:from AS timestamp) IS NULL OR start_time >= CAST(:from AS timestamp)) AND (CAST(:to AS timestamp) IS NULL OR start_time <= CAST(:to AS timestamp)) AND (CAST(:tsp AS varchar) IS NULL OR LOWER(REPLACE(tsp_name,'-',' ')) = LOWER(REPLACE(CAST(:tsp AS varchar),'-',' ')))";
             Map<String,Object> p = new HashMap<>();
             p.put("from", from);
             p.put("to", to);
