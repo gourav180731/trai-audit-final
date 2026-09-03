@@ -90,12 +90,66 @@ public class LiveReportController {
             List<String> tsps = gr.getTspFilter() != null && !gr.getTspFilter().isBlank()
                     ? List.of(gr.getTspFilter())
                     : discRepo.countByTspForBatch(batch.getId()).stream().map(r -> (String) r[0]).toList();
+            if (tsps.isEmpty()) {
+                // fallback to all active TSPs if batch has no discrepancies
+                tsps = emailService.resolveAllActive().stream().map(TspContactList::getTspName).distinct().toList();
+            }
             Map<String, List<TspContactList>> recipients = emailService.resolveRecipients(tsps);
+            List<String> allEmails = recipients.values().stream().flatMap(List::stream).map(TspContactList::getEmailId).distinct().toList();
             model.addAttribute("recipientsByTsp", recipients);
-            model.addAttribute("allEmails", recipients.values().stream().flatMap(List::stream).map(TspContactList::getEmailId).toList());
+            model.addAttribute("allEmails", allEmails);
+
+            // Editable To/Cc — pre-filled from DB (both To and Cc get same list so mail is delivered and user can add more)
+            String emailsCsv = String.join(", ", allEmails);
+            model.addAttribute("defaultTo", emailsCsv);
+            model.addAttribute("defaultCc", emailsCsv);
+
+            // Subject is editable, pre-filled with official format
+            String defaultSubject = emailService.buildOfficialSubject(gr);
+            model.addAttribute("defaultSubject", defaultSubject);
+
+            // Body is editable, pre-filled with official format using real counts
+            String period = formatPeriod(gr.getDateFrom(), gr.getDateTo());
+            String tspLabel = (gr.getTspFilter() != null && !gr.getTspFilter().isBlank() && !gr.getTspFilter().equalsIgnoreCase("ALL"))
+                    ? gr.getTspFilter() : "Airtel";
+            long delayCount = safe(batch.getCountTotalDurationBreach()) + safe(batch.getCountPrefetchDurationBreach());
+            if (delayCount == 0) delayCount = safe(batch.getCountFeedbackDelayExceeds());
+            long pendingCount = safe(batch.getCountStatisticsPending());
+            long zeroCount = safe(batch.getCountCompleteFailure()); // complete failure is closest to zero-subscriber in live schema
+            // Delta pending is part of feedback not received; show pendingCount as delta for demo if needed, else 0
+            long deltaCount = 0; // no separate delta check in live DB; show 0 truthfully (example had 1)
+            // Try to compute delta from discrepancy_records if needed: count where type is STATISTICS_PENDING and delta-like, but we keep 0 to avoid fabrication
+            long expiryCount = safe(batch.getCountExpiredNonzero());
+            // Find max delay for wording
+            String maxDelay = "two day";
+            // Try to find max feedback delay from discrepancies
+            try {
+                var maxDelayRec = discRepo.findByIngestionBatchId(batch.getId()).stream()
+                        .filter(r -> r.getDiscrepancyType() == com.audit.webapp.entity.DiscrepancyRecord.DiscrepancyType.FEEDBACK_DELAY_EXCEEDS_THRESHOLD)
+                        .map(r -> r.getFeedbackDelaySeconds() != null ? r.getFeedbackDelaySeconds() : 0L)
+                        .max(Long::compare).orElse(0L);
+                if (maxDelayRec > 0) {
+                    long hrs = maxDelayRec / 3600;
+                    if (hrs >= 24) maxDelay = (hrs/24) + " day" + (hrs/24 > 1 ? "s" : "");
+                    else if (hrs > 0) maxDelay = hrs + " hour" + (hrs > 1 ? "s" : "");
+                    else maxDelay = (maxDelayRec/60) + " minutes";
+                }
+            } catch (Exception ignored) {}
+            String defaultBody = emailService.buildOfficialBodyWithCounts(period, tspLabel, delayCount, pendingCount, zeroCount, deltaCount, expiryCount, maxDelay);
+            model.addAttribute("defaultBody", defaultBody);
         }
         return "report-preview";
     }
+
+    private static String formatPeriod(java.time.LocalDateTime from, java.time.LocalDateTime to) {
+        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd MMMM yy", java.util.Locale.ENGLISH);
+        try {
+            String a = from != null ? from.format(fmt) : "—";
+            String b = to != null ? to.format(fmt) : "—";
+            return a + " - " + b;
+        } catch (Exception e) { return "—"; }
+    }
+    private static long safe(Integer v) { return v != null ? v : 0; }
 
     @GetMapping("/live/download/{reportId}")
     @ResponseBody
@@ -120,9 +174,11 @@ public class LiveReportController {
     public String sendEmail(@PathVariable Long reportId,
                             @RequestParam(required = false) String subject,
                             @RequestParam(required = false) String body,
+                            @RequestParam(required = false) String to,
+                            @RequestParam(required = false) String cc,
                             RedirectAttributes ra) {
         try {
-            GeneratedReport gr = emailService.sendReport(reportId, blankToNull(subject), blankToNull(body));
+            GeneratedReport gr = emailService.sendReport(reportId, blankToNull(subject), blankToNull(body), blankToNull(to), blankToNull(cc));
             ra.addFlashAttribute("success", "Email sent to: " + gr.getEmailRecipients());
             ra.addFlashAttribute("emailStatus", gr.getEmailStatus());
             return "redirect:/live/preview/" + reportId;

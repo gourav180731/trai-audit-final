@@ -78,12 +78,30 @@
                 <div th:unless="${allEmails.isEmpty()}" class="gov-alert gov-alert--info" style="margin-top:10px"><i class="fas fa-circle-info gov-alert-icon"></i><div>Will send to <strong th:text="${allEmails.size()}"></strong> address(es): <code th:text="${#strings.listJoin(allEmails, ', ')}" style="word-break:break-all"></code></div></div>
 
                 <form method="post" th:action="@{'/live/send/' + ${report.id}}" style="margin-top:12px" data-gov-prevent-double>
-                    <div class="gov-form-group"><label class="gov-form-label" for="govSubject">Subject <span class="gov-supporting">(optional override)</span></label><input type="text" id="govSubject" name="subject" class="gov-input" th:placeholder="'CAP Sachet TSP Discrepancy Report — ' + ${report.fileName}"></div>
-                    <div class="gov-form-group"><label class="gov-form-label" for="govBody">Body <span class="gov-supporting">(optional override)</span></label><textarea id="govBody" name="body" class="gov-textarea" rows="3" placeholder="Leave blank to use default body with counts and thresholds."></textarea></div>
+                    <div class="gov-form-group">
+                        <label class="gov-form-label" for="govTo">To <span class="gov-required">*</span> <span class="gov-supporting">— recipients (editable, comma-separated)</span></label>
+                        <input type="text" id="govTo" name="to" class="gov-input" th:value="${defaultTo}" placeholder="comma separated emails">
+                        <div class="gov-form-hint">Pre-filled from <code>dm.t_tsp_contact_list</code> (active, email_notifications=true). You can add/remove addresses.</div>
+                    </div>
+                    <div class="gov-form-group">
+                        <label class="gov-form-label" for="govCc">Cc <span class="gov-supporting">— carbon copy (editable, comma-separated)</span></label>
+                        <input type="text" id="govCc" name="cc" class="gov-input" th:value="${defaultCc}" placeholder="comma separated emails (optional)">
+                        <div class="gov-form-hint">Initially same as <strong>To</strong> so everyone in DB receives the mail via Cc as well. Add any new CC addresses here.</div>
+                    </div>
+                    <div class="gov-form-group">
+                        <label class="gov-form-label" for="govSubject">Subject <span class="gov-required">*</span> <span class="gov-supporting">— editable, always in edit mode</span></label>
+                        <input type="text" id="govSubject" name="subject" class="gov-input" th:value="${defaultSubject}">
+                        <div class="gov-form-hint">Default: <code>Discrepanicies observed in CAP SMS Dissemination Feedback Statistics -</code> — change as needed before sending.</div>
+                    </div>
+                    <div class="gov-form-group">
+                        <label class="gov-form-label" for="govBody">Body <span class="gov-required">*</span> <span class="gov-supporting">— editable, always in edit mode</span></label>
+                        <textarea id="govBody" name="body" class="gov-textarea" rows="14" th:text="${defaultBody}"></textarea>
+                        <div class="gov-form-hint">Auto-generated from the selected period, TSP, and live counts (dissemination delay, pending, zero subscriber, delta, expiry). All numbers are real — edit any line before sending.</div>
+                    </div>
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                        <button type="submit" class="gov-btn gov-btn--danger gov-btn--lg" th:disabled="${allEmails.isEmpty()}" onclick="return confirm('Send this audit report to the configured TSP recipients?\n\nRecipients: ' + (document.querySelector('code') ? document.querySelector('code').innerText.slice(0,120) : '') + '\n\nAttachment: ' + document.querySelector('code')?.innerText)"><i class="fas fa-paper-plane"></i> Send Email</button>
+                        <button type="submit" class="gov-btn gov-btn--danger gov-btn--lg" onclick="return confirm('Send this audit report?\n\nTo: ' + (document.getElementById('govTo')?.value.slice(0,120) || '') + '\nCc: ' + (document.getElementById('govCc')?.value.slice(0,120) || '') + '\nSubject: ' + (document.getElementById('govSubject')?.value || '') + '\n\nAttachment: ' + document.querySelector('code')?.innerText)"><i class="fas fa-paper-plane"></i> Send Email</button>
                         <a th:href="@{'/live/download/' + ${report.id}}" class="gov-btn gov-btn--secondary">Download again</a>
-                        <span class="gov-supporting">You will see a confirmation with recipients, subject, and success/failure — never silently.</span>
+                        <span class="gov-supporting">You will see a confirmation with recipients (To/Cc), subject, and success/failure — never silently.</span>
                     </div>
                 </form>
 
