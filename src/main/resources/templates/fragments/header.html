@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="govHeader" class="gov-header" role="banner">
+    <div class="gov-header-inner">
+        <div class="gov-header-brand">
+            <button id="govSidebarToggle" class="btn btn-sm btn-outline-light d-lg-none" aria-label="Toggle navigation" style="border-color:rgba(255,255,255,0.4)">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="gov-header-mark" aria-hidden="true">GOI</div>
+            <div class="gov-header-titles">
+                <div class="gov-header-dept">Telecom Regulatory Authority of India</div>
+                <div class="gov-header-app">SMS Dissemination Audit System</div>
+                <div class="gov-header-sub d-none d-md-block">CAP Sachet — TSP Compliance Monitor</div>
+            </div>
+        </div>
+        <div class="gov-header-actions">
+            <span class="gov-header-user"><i class="fas fa-user-shield me-1"></i> Audit Officer</span>
+            <span class="badge bg-light text-dark d-none d-md-inline" style="font-size:10px;letter-spacing:0.04em">LIVE DB: trai_audit</span>
+        </div>
+    </div>
+</header>
+<div id="govSidebarBackdrop" class="gov-sidebar-backdrop" aria-hidden="true"></div>
+</body>
+</html>

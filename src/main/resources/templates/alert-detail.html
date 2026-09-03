@@ -1,112 +1,80 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="'Alert: ' + ${alertId}">Alert Detail</title>
+    <title th:text="'Alert ' + ${alertId} + ' — TRAI Audit'">Alert Detail</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/gov-portal.css}" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/}">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
-    </nav>
+<div th:replace="~{fragments/header :: govHeader}"></div>
+<div class="gov-shell">
+    <div th:replace="~{fragments/sidebar :: govSidebar(active='discrepancies')}"></div>
+    <main class="gov-main">
+        <nav class="gov-breadcrumb" aria-label="Breadcrumb">
+            <a th:href="@{/}">Dashboard</a><span class="gov-breadcrumb-sep">›</span>
+            <a th:href="@{/search}">Search</a><span class="gov-breadcrumb-sep">›</span>
+            <span>Alert <span th:text="${alertId}"></span></span>
+        </nav>
 
-    <div class="container-fluid mt-4">
-        <div class="row mb-4">
-            <div class="col-12">
-                <h2><i class="fas fa-bell text-info"></i> Alert Details</h2>
-                <h4 class="text-muted">Alert ID: <strong th:text="${alertId}">Alert ID</strong></h4>
-                <p>Total Discrepancies: <strong th:text="${#lists.size(records)}">0</strong></p>
+        <div class="gov-page-head">
+            <h1 class="gov-page-title"><i class="fas fa-bell" style="color:var(--gov-primary)"></i> Alert Details</h1>
+            <p class="gov-muted">Alert <strong th:text="${alertId}">Alert ID</strong> — <span th:text="${#lists.size(records)} + ' discrepancies across ' + ${#maps.size(recordsByTsp)} + ' TSP(s)'">0 discrepancies</span></p>
+        </div>
+
+        <!-- Alert Information -->
+        <section class="gov-card" th:if="${!#lists.isEmpty(records)}">
+            <div class="gov-card-header">Alert Information</div>
+            <div class="gov-card-body">
+                <div class="gov-panel-grid">
+                    <dl class="gov-kv"><dt>Alert ID</dt><dd><code th:text="${alertId}"></code></dd></dl>
+                    <dl class="gov-kv"><dt>State</dt><dd th:text="${records[0].state} ?: '—'"></dd></dl>
+                    <dl class="gov-kv"><dt>Event</dt><dd th:text="${records[0].event} ?: '—'"></dd></dl>
+                    <dl class="gov-kv"><dt>Alert Time</dt><dd th:text="${records[0].alertCreationTime} ?: '—'"></dd></dl>
+                    <dl class="gov-kv" style="grid-column:1 / -1"><dt>Area</dt><dd th:text="${records[0].areaDescription} ?: '—'"></dd></dl>
+                </div>
             </div>
+        </section>
+
+        <div th:if="${#lists.isEmpty(records)}" class="gov-empty" style="margin-top:12px">
+            <div class="gov-empty-icon"><i class="fas fa-circle-check"></i></div>
+            <div class="gov-empty-title">No discrepancies for this alert</div>
+            <div class="gov-empty-text">This alert has no findings for the current batch. It may be clean or outside the selected audit period.</div>
         </div>
 
-        <!-- Alert Summary Info -->
-        <div class="row mb-4" th:if="${!#lists.isEmpty(records)}">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Alert Information</h5>
-                    </div>
-                    <div class="card-body">
-                        <dl class="row">
-                            <dt class="col-sm-3">State:</dt>
-                            <dd class="col-sm-9" th:text="${records[0].state}">State</dd>
-                            
-                            <dt class="col-sm-3">Event:</dt>
-                            <dd class="col-sm-9" th:text="${records[0].event}">Event</dd>
-                            
-                            <dt class="col-sm-3">Alert Creation Time:</dt>
-                            <dd class="col-sm-9" th:text="${records[0].alertCreationTime}">Time</dd>
-                            
-                            <dt class="col-sm-3">Area Description:</dt>
-                            <dd class="col-sm-9" th:text="${records[0].areaDescription}">Area</dd>
-                        </dl>
+        <!-- By TSP -->
+        <section th:unless="${#lists.isEmpty(records)}" style="margin-top:12px">
+            <h2 class="gov-section-title" style="margin-bottom:8px">Discrepancies by TSP</h2>
+            <div th:each="tspEntry : ${recordsByTsp}" class="gov-card" style="margin-bottom:10px">
+                <div class="gov-card-header">
+                    <span><i class="fas fa-tower-broadcast me-1"></i> <span th:text="${tspEntry.key}">TSP</span></span>
+                    <span class="gov-badge gov-badge--neutral" th:text="${#lists.size(tspEntry.value)} + ' findings'">0 findings</span>
+                </div>
+                <div class="gov-card-body gov-card-body--p0">
+                    <div class="gov-table-wrap" style="border:none;border-radius:0">
+                        <table class="gov-table">
+                            <thead><tr><th>Type</th><th>Reason</th><th>Actual</th><th>Expected</th><th>Deviation</th><th>Action</th></tr></thead>
+                            <tbody>
+                            <tr th:each="record : ${tspEntry.value}">
+                                <td><span class="gov-badge gov-badge--neutral" th:text="${record.discrepancyType}">Type</span></td>
+                                <td th:text="${record.reason} ?: '—'" style="max-width:280px;white-space:normal;font-size:12px">Reason</td>
+                                <td><code th:text="${record.actualValue} ?: '—'" style="font-size:11px"></code></td>
+                                <td><code th:text="${record.expectedValue} ?: '—'" style="font-size:11px"></code></td>
+                                <td><span class="gov-badge gov-badge--warning" th:text="${record.deviation} ?: '—'">—</span></td>
+                                <td><a th:href="@{/discrepancy/{id}(id=${record.id})}" class="gov-btn gov-btn--secondary gov-btn--sm"><i class="fas fa-eye"></i> Details</a></td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Discrepancies by TSP -->
-        <div class="row">
-            <div class="col-12">
-                <h4 class="mb-3">Discrepancies by TSP</h4>
-                
-                <div th:if="${#lists.isEmpty(records)}" class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> No discrepancies found for this alert.
-                </div>
-
-                <div th:each="tspEntry : ${recordsByTsp}" class="card mb-3">
-                    <div class="card-header" th:classappend="${tspEntry.key == 'Airtel' ? 'bg-danger text-white' : 
-                                                               tspEntry.key == 'BSNL' ? 'bg-primary text-white' :
-                                                               tspEntry.key == 'Reliance Jio' ? 'bg-info text-white' :
-                                                               tspEntry.key == 'Vodafone Idea' ? 'bg-warning' : 'bg-secondary text-white'}">
-                        <h5 class="mb-0">
-                            <i class="fas fa-sim-card"></i> <span th:text="${tspEntry.key}">TSP</span>
-                            <span class="badge bg-light text-dark float-end" th:text="${#lists.size(tspEntry.value)} + ' discrepancies'">Count</span>
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Type</th>
-                                        <th>Reason</th>
-                                        <th>Actual Value</th>
-                                        <th>Expected Value</th>
-                                        <th>Deviation</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="record : ${tspEntry.value}">
-                                        <td>
-                                            <span class="badge bg-danger" th:text="${record.discrepancyType}">Type</span>
-                                        </td>
-                                        <td th:text="${record.reason}">Reason</td>
-                                        <td th:text="${record.actualValue}">Actual</td>
-                                        <td th:text="${record.expectedValue}">Expected</td>
-                                        <td th:text="${record.deviation}">Deviation</td>
-                                        <td>
-                                            <a th:href="@{/discrepancy/{id}(id=${record.id})}" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i> Details
-                                            </a>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        </section>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: govFooter}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/gov-portal.js}"></script>
 </body>
 </html>

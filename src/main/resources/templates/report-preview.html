@@ -1,105 +1,100 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Preview — Step 2: Send Email</title>
+    <title>Audit Report Preview — TRAI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/gov-portal.css}" rel="stylesheet">
 </head>
 <body>
-<nav class="navbar navbar-dark bg-primary">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/live"><i class="fas fa-arrow-left"></i> Back to Live Monitor</a>
-    </div>
-</nav>
-<div class="container mt-4">
+<div th:replace="~{fragments/header :: govHeader}"></div>
+<div class="gov-shell">
+    <div th:replace="~{fragments/sidebar :: govSidebar(active='dashboard')}"></div>
+    <main class="gov-main">
+        <nav class="gov-breadcrumb" aria-label="Breadcrumb">
+            <a th:href="@{/}">Dashboard</a><span class="gov-breadcrumb-sep">›</span>
+            <a th:href="@{/live}">Audit</a><span class="gov-breadcrumb-sep">›</span>
+            <span>Report Preview</span>
+        </nav>
 
-    <div th:if="${success}" class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle"></i> <span th:text="${success}"></span><span th:if="${emailStatus}" class="badge bg-info ms-2" th:text="${emailStatus}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        <div class="gov-page-head">
+            <h1 class="gov-page-title">Audit Report Preview</h1>
+            <p class="gov-muted">Review the generated report, verify recipients, and send. Email is never sent automatically.</p>
+        </div>
 
-    <div class="card border-success mb-4">
-        <div class="card-header bg-success text-white"><h5 class="mb-0"><i class="fas fa-file-excel"></i> Report Generated — Preview (Click 1 ✓ → Click 2 below)</h5></div>
-        <div class="card-body">
-            <dl class="row mb-0">
-                <dt class="col-sm-3">File</dt><dd class="col-sm-9"><code th:text="${report.fileName}"></code> (<span th:text="${report.fileSizeBytes}"></span> bytes, SHA256 <code th:text="${report.checksumSha256}"></code>)</dd>
-                <dt class="col-sm-3">Generated</dt><dd class="col-sm-9" th:text="${report.generatedAt} + ' by ' + (${report.generatedBy} ?: '—')"></dd>
-                <dt class="col-sm-3">Date range</dt><dd class="col-sm-9" th:text="${report.dateFrom} + ' → ' + ${report.dateTo}"></dd>
-                <dt class="col-sm-3">TSP filter</dt><dd class="col-sm-9" th:text="${report.tspFilter} ?: 'ALL'"></dd>
-                <dt class="col-sm-3">Discrepancies</dt><dd class="col-sm-9" th:text="${report.discrepancyCount}"></dd>
-                <dt class="col-sm-3">Batch</dt><dd class="col-sm-9">#<span th:text="${report.batchId}"></span> — <a th:href="@{'/category/COMPLETE_FAILURE?batchId=' + ${report.batchId}}" class="btn btn-sm btn-outline-primary">View discrepancies</a></dd>
-            </dl>
-            <div class="mt-3">
-                <a th:href="@{'/live/download/' + ${report.id}}" class="btn btn-primary btn-lg" download><i class="fas fa-download"></i> Download Report</a>
-                <small class="text-muted ms-2">This is the auditable file — persisted at <code>data/reports/&lt;id&gt;_&lt;filename&gt;</code></small>
+        <div th:if="${success}" class="gov-alert gov-alert--success"><i class="fas fa-circle-check gov-alert-icon"></i><div><span th:text="${success}"></span> <span th:if="${emailStatus}" class="gov-badge gov-badge--info" th:text="${emailStatus}"></span></div></div>
+        <div th:if="${error}" class="gov-alert gov-alert--danger" style="margin-top:8px"><i class="fas fa-circle-exclamation gov-alert-icon"></i><div th:text="${error}"></div></div>
+
+        <!-- Report file info -->
+        <section class="gov-card" style="margin-top:12px">
+            <div class="gov-card-header gov-card-header--success">
+                <span><i class="fas fa-file-circle-check me-1"></i> Report Generated — Step 1 ✓</span>
+                <span class="gov-badge gov-badge--success">Audited</span>
             </div>
-        </div>
-    </div>
-
-    <div th:if="${batch != null}" class="card mb-4">
-        <div class="card-header"><h6 class="mb-0"><i class="fas fa-chart-pie"></i> Per-Check Counts</h6></div>
-        <div class="card-body p-0">
-            <table class="table table-sm mb-0">
-                <thead><tr><th>Check</th><th class="text-end">Count</th></tr></thead>
-                <tbody>
-                <tr th:each="c : ${counts}"><td th:text="${c[0]}"></td><td class="text-end" th:text="${c[1]}"></td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="card border-warning mb-4">
-        <div class="card-header bg-warning"><h5 class="mb-0"><i class="fas fa-envelope"></i> Step 2 — Send Email</h5></div>
-        <div class="card-body">
-            <p class="text-muted">Recipients are resolved live from <code>dm.t_tsp_contact_list</code> where <code>tsp_name</code> matches (hyphen/space-normalized), <code>deactivated_on IS NULL</code>, and <code>email_notifications = true</code>. If a TSP has zero contacts, it is flagged below — not silently skipped.</p>
-
-            <h6>Recipients that will receive this report:</h6>
-            <table class="table table-sm table-bordered">
-                <thead><tr><th>TSP</th><th>Emails (active, email_notifications=true)</th><th>Boundary restriction</th></tr></thead>
-                <tbody>
-                <tr th:each="e : ${recipientsByTsp}">
-                    <td><strong th:text="${e.key}"></strong></td>
-                    <td>
-                        <span th:if="${e.value.isEmpty()}" class="badge bg-danger">NO active email-enabled contacts — TSP will be flagged in email body!</span>
-                        <span th:unless="${e.value.isEmpty()}" th:each="c,iter : ${e.value}">
-                            <span th:text="${c.emailId}"></span><span th:if="${!iter.last}">, </span>
-                        </span>
-                    </td>
-                    <td><small th:text="${e.value.isEmpty() ? '—' : e.value[0].boundaryRestriction ?: '—'}"></small></td>
-                </tr>
-                </tbody>
-            </table>
-            <div th:if="${allEmails.isEmpty()}" class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> No recipients found for this report's TSP(s). Sending will fail with <code>NO_RECIPIENTS</code> — add rows to <code>dm.t_tsp_contact_list</code> first.</div>
-            <div th:unless="${allEmails.isEmpty()}" class="alert alert-info"><i class="fas fa-info-circle"></i> Will send to <strong th:text="${allEmails.size()}"></strong> address(es): <code th:text="${#strings.listJoin(allEmails, ', ')}"></code></div>
-
-            <form method="post" th:action="@{'/live/send/' + ${report.id}}" class="mt-3">
-                <div class="mb-2">
-                    <label class="form-label">Subject (optional override)</label>
-                    <input type="text" name="subject" class="form-control" th:placeholder="'CAP Sachet TSP Discrepancy Report — ' + ${report.fileName}">
+            <div class="gov-card-body">
+                <div class="gov-panel-grid">
+                    <div>
+                        <dl class="gov-kv"><dt>File</dt><dd><code th:text="${report.fileName}"></code></dd></dl>
+                        <dl class="gov-kv"><dt>Size / SHA256</dt><dd><span th:text="${report.fileSizeBytes}"></span> bytes · <code th:text="${report.checksumSha256}" style="word-break:break-all"></code></dd></dl>
+                        <dl class="gov-kv"><dt>Generated</dt><dd th:text="${#temporals.format(report.generatedAt, 'dd MMM yyyy HH:mm')} + ' by ' + (${report.generatedBy} ?: '—')"></dd></dl>
+                    </div>
+                    <div>
+                        <dl class="gov-kv"><dt>Audit period</dt><dd th:text="${report.dateFrom} + ' → ' + ${report.dateTo}"></dd></dl>
+                        <dl class="gov-kv"><dt>TSP filter</dt><dd><span class="gov-badge gov-badge--neutral" th:text="${report.tspFilter} ?: 'ALL'">ALL</span></dd></dl>
+                        <dl class="gov-kv"><dt>Findings</dt><dd><strong th:text="${report.discrepancyCount}">0</strong> discrepancy instances</dd></dl>
+                        <dl class="gov-kv"><dt>Batch</dt><dd>#<span th:text="${report.batchId}"></span> · <a th:href="@{'/category/COMPLETE_FAILURE?batchId=' + ${report.batchId}}">View findings</a></dd></dl>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Body (optional override)</label>
-                    <textarea name="body" class="form-control" rows="4" placeholder="Leave blank to use default body with counts and thresholds."></textarea>
+                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+                    <a th:href="@{'/live/download/' + ${report.id}}" class="gov-btn gov-btn--primary gov-btn--lg" download><i class="fas fa-download"></i> Download Report</a>
+                    <span class="gov-supporting" style="align-self:center">Persisted at <code>data/reports/&lt;id&gt;_&lt;filename&gt;</code> · Audited via <code>generated_reports</code>.</span>
                 </div>
-                <button type="submit" class="btn btn-warning btn-lg" th:disabled="${allEmails.isEmpty()}"><i class="fas fa-paper-plane"></i> Send Email</button>
-                <small class="text-muted ms-2">After sending, a confirmation with recipients, subject, and success/failure will be shown here — never silently.</small>
-            </form>
-
-            <div th:if="${report.emailSent}" class="alert alert-success mt-3">
-                <h6><i class="fas fa-check-double"></i> Last send result</h6>
-                <div>Status: <span class="badge bg-success" th:text="${report.emailStatus}"></span></div>
-                <div>Sent at: <span th:text="${report.emailSentAt}"></span></div>
-                <div>Recipients: <code th:text="${report.emailRecipients}"></code></div>
-                <div>Subject: <code th:text="${report.emailSubject}"></code></div>
             </div>
-            <div th:if="${report.emailStatus == 'FAILED'}" class="alert alert-danger mt-3">
-                <h6>Last send failed</h6>
-                <div th:text="${report.emailError}"></div>
-            </div>
-        </div>
-    </div>
+        </section>
 
+        <!-- Per-check counts -->
+        <section th:if="${batch != null}" class="gov-card" style="margin-top:12px">
+            <div class="gov-card-header">Findings by Check</div>
+            <div class="gov-card-body gov-card-body--p0">
+                <div class="gov-table-wrap" style="border:none;border-radius:0">
+                    <table class="gov-table"><thead><tr><th>Check</th><th class="gov-text-right">Count</th></tr></thead><tbody><tr th:each="c : ${counts}"><td th:text="${c[0]}"></td><td class="gov-text-right"><span class="gov-badge gov-badge--neutral" th:text="${c[1]}">0</span></td></tr></tbody></table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recipients + Send Email -->
+        <section class="gov-card" style="margin-top:12px;border-color:var(--gov-warning-border)">
+            <div class="gov-card-header gov-card-header--warning"><span><i class="fas fa-envelope me-1"></i> Step 2 — Send Report by Email</span><span class="gov-badge gov-badge--neutral">Explicit action</span></div>
+            <div class="gov-card-body">
+                <div class="gov-alert gov-alert--info"><i class="fas fa-circle-info gov-alert-icon"></i><div>Recipients are resolved live from <code>dm.t_tsp_contact_list</code> where <code>tsp_name</code> matches (hyphen/space-normalized), <code>deactivated_on IS NULL</code>, and <code>email_notifications = true</code>. TSPs with zero contacts are flagged below — not silently skipped.</div></div>
+
+                <h3 class="gov-section-title" style="margin-top:12px">Recipients that will receive this report</h3>
+                <div class="gov-table-wrap" style="margin-top:8px">
+                    <table class="gov-table"><thead><tr><th>TSP</th><th>Emails (active)</th><th>Boundary</th></tr></thead><tbody><tr th:each="e : ${recipientsByTsp}"><td><strong th:text="${e.key}"></strong></td><td><span th:if="${e.value.isEmpty()}" class="gov-badge gov-badge--danger"><i class="fas fa-triangle-exclamation"></i> NO active email-enabled contacts — will be flagged in email body!</span><span th:unless="${e.value.isEmpty()}" th:each="c,iter : ${e.value}"><span th:text="${c.emailId}"></span><span th:if="${!iter.last}">, </span></span></td><td class="gov-supporting" th:text="${e.value.isEmpty() ? '—' : e.value[0].boundaryRestriction ?: '—'}"></td></tr></tbody></table>
+                </div>
+                <div th:if="${allEmails.isEmpty()}" class="gov-alert gov-alert--danger" style="margin-top:10px"><i class="fas fa-triangle-exclamation gov-alert-icon"></i><div>No recipients found. Sending will fail with <code>NO_RECIPIENTS</code> — add rows to <code>dm.t_tsp_contact_list</code>.</div></div>
+                <div th:unless="${allEmails.isEmpty()}" class="gov-alert gov-alert--info" style="margin-top:10px"><i class="fas fa-circle-info gov-alert-icon"></i><div>Will send to <strong th:text="${allEmails.size()}"></strong> address(es): <code th:text="${#strings.listJoin(allEmails, ', ')}" style="word-break:break-all"></code></div></div>
+
+                <form method="post" th:action="@{'/live/send/' + ${report.id}}" style="margin-top:12px" data-gov-prevent-double>
+                    <div class="gov-form-group"><label class="gov-form-label" for="govSubject">Subject <span class="gov-supporting">(optional override)</span></label><input type="text" id="govSubject" name="subject" class="gov-input" th:placeholder="'CAP Sachet TSP Discrepancy Report — ' + ${report.fileName}"></div>
+                    <div class="gov-form-group"><label class="gov-form-label" for="govBody">Body <span class="gov-supporting">(optional override)</span></label><textarea id="govBody" name="body" class="gov-textarea" rows="3" placeholder="Leave blank to use default body with counts and thresholds."></textarea></div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <button type="submit" class="gov-btn gov-btn--danger gov-btn--lg" th:disabled="${allEmails.isEmpty()}" onclick="return confirm('Send this audit report to the configured TSP recipients?\n\nRecipients: ' + (document.querySelector('code') ? document.querySelector('code').innerText.slice(0,120) : '') + '\n\nAttachment: ' + document.querySelector('code')?.innerText)"><i class="fas fa-paper-plane"></i> Send Email</button>
+                        <a th:href="@{'/live/download/' + ${report.id}}" class="gov-btn gov-btn--secondary">Download again</a>
+                        <span class="gov-supporting">You will see a confirmation with recipients, subject, and success/failure — never silently.</span>
+                    </div>
+                </form>
+
+                <div th:if="${report.emailSent}" class="gov-alert gov-alert--success" style="margin-top:12px"><i class="fas fa-circle-check gov-alert-icon"></i><div><strong>Last send:</strong> <span class="gov-badge gov-badge--success" th:text="${report.emailStatus}"></span> at <span th:text="${report.emailSentAt}"></span> to <code th:text="${report.emailRecipients}" style="word-break:break-all"></code> — Subject: <code th:text="${report.emailSubject}"></code></div></div>
+                <div th:if="${report.emailStatus == 'FAILED'}" class="gov-alert gov-alert--danger" style="margin-top:10px"><i class="fas fa-circle-exclamation gov-alert-icon"></i><div><strong>Last send failed:</strong> <span th:text="${report.emailError}"></span></div></div>
+            </div>
+        </section>
+    </main>
 </div>
+<div th:replace="~{fragments/footer :: govFooter}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/gov-portal.js}"></script>
 </body>
 </html>

@@ -1,188 +1,98 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search - TRAI Audit</title>
+    <title>Search Audit Records — TRAI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/gov-portal.css}" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/}">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-            <span class="navbar-text text-white">
-                <i class="fas fa-search"></i> Search & Filter
-            </span>
+<div th:replace="~{fragments/header :: govHeader}"></div>
+<div class="gov-shell">
+    <div th:replace="~{fragments/sidebar :: govSidebar(active='search')}"></div>
+    <main class="gov-main">
+        <nav class="gov-breadcrumb" aria-label="Breadcrumb"><a th:href="@{/}">Dashboard</a><span class="gov-breadcrumb-sep">›</span><span>Search Audit Records</span></nav>
+        <div class="gov-page-head">
+            <h1 class="gov-page-title">Search Audit Records</h1>
+            <p class="gov-muted">Filter by alert, TSP, category, date, and status. All filters are optional and can be combined. Results come directly from <code>discrepancy_records</code>.</p>
         </div>
-    </nav>
 
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-filter"></i> Search Filters</h5>
-                    </div>
-                    <div class="card-body">
+        <div class="row g-3">
+            <!-- Filters -->
+            <div class="col-lg-3">
+                <section class="gov-card" aria-labelledby="govFilterTitle">
+                    <div class="gov-card-header"><span id="govFilterTitle"><i class="fas fa-filter me-1"></i> Filters</span></div>
+                    <div class="gov-card-body">
                         <form method="post" th:action="@{/search}">
-                            <div class="mb-3">
-                                <label for="alertId" class="form-label">Alert ID</label>
-                                <input type="text" class="form-control" id="alertId" name="alertId" 
-                                       placeholder="Enter Alert ID" th:value="${criteria?.alertId}">
+                            <div class="gov-form-group"><label for="alertId" class="gov-form-label">Alert ID</label><input type="text" class="gov-input" id="alertId" name="alertId" placeholder="Enter Alert ID" th:value="${criteria?.alertId}"></div>
+                            <div class="row g-2">
+                                <div class="col-6"><label for="startDate" class="gov-form-label">Start date</label><input type="date" class="gov-input" id="startDate" name="startDate"></div>
+                                <div class="col-6"><label for="endDate" class="gov-form-label">End date</label><input type="date" class="gov-input" id="endDate" name="endDate"></div>
                             </div>
-
-                            <div class="mb-3">
-                                <label for="startDate" class="form-label">Start Date</label>
-                                <input type="date" class="form-control" id="startDate" name="startDate">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="endDate" class="form-label">End Date</label>
-                                <input type="date" class="form-control" id="endDate" name="endDate">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="tsp" class="form-label">TSP</label>
-                                <select class="form-select" id="tsp" name="tsp">
-                                    <option value="">All TSPs</option>
-                                    <option th:each="tsp : ${tsps}" th:value="${tsp}" th:text="${tsp}"
-                                            th:selected="${criteria?.tsp == tsp}">TSP</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="discrepancyType" class="form-label">Discrepancy Type</label>
-                                <select class="form-select" id="discrepancyType" name="discrepancyType">
-                                    <option value="">All Types</option>
-                                    <option th:each="type : ${discrepancyTypes}" th:value="${type}" th:text="${type}"
-                                            th:selected="${criteria?.discrepancyType == type}">Type</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="state" class="form-label">State</label>
-                                <input type="text" class="form-control" id="state" name="state" 
-                                       placeholder="Enter State" th:value="${criteria?.state}">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="status" class="form-label">Status</label>
-                                <select class="form-select" id="status" name="status">
-                                    <option value="">All Statuses</option>
-                                    <option th:each="stat : ${statuses}" th:value="${stat}" th:text="${stat}"
-                                            th:selected="${criteria?.status == stat}">Status</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Cell Count Range</label>
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text">Min</span>
-                                    <input type="number" class="form-control" name="minCellCount" 
-                                           placeholder="Min" th:value="${criteria?.minCellCount}">
-                                </div>
-                                <div class="input-group">
-                                    <span class="input-group-text">Max</span>
-                                    <input type="number" class="form-control" name="maxCellCount" 
-                                           placeholder="Max" th:value="${criteria?.maxCellCount}">
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Subscriber Count Range</label>
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text">Min</span>
-                                    <input type="number" class="form-control" name="minSubscriberCount" 
-                                           placeholder="Min" th:value="${criteria?.minSubscriberCount}">
-                                </div>
-                                <div class="input-group">
-                                    <span class="input-group-text">Max</span>
-                                    <input type="number" class="form-control" name="maxSubscriberCount" 
-                                           placeholder="Max" th:value="${criteria?.maxSubscriberCount}">
-                                </div>
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i> Search
-                                </button>
-                                <a href="/search" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i> Clear
-                                </a>
+                            <div class="gov-form-group" style="margin-top:10px"><label for="tsp" class="gov-form-label">TSP</label><select class="gov-select" id="tsp" name="tsp"><option value="">All TSPs</option><option th:each="tsp : ${tsps}" th:value="${tsp}" th:text="${tsp}" th:selected="${criteria?.tsp == tsp}">TSP</option></select></div>
+                            <div class="gov-form-group"><label for="discrepancyType" class="gov-form-label">Discrepancy Type</label><select class="gov-select" id="discrepancyType" name="discrepancyType"><option value="">All Types</option><option th:each="type : ${discrepancyTypes}" th:value="${type}" th:text="${type}" th:selected="${criteria?.discrepancyType == type}">Type</option></select></div>
+                            <div class="gov-form-group"><label for="state" class="gov-form-label">State</label><input type="text" class="gov-input" id="state" name="state" placeholder="Enter State" th:value="${criteria?.state}"></div>
+                            <div class="gov-form-group"><label for="status" class="gov-form-label">Status</label><select class="gov-select" id="status" name="status"><option value="">All Statuses</option><option th:each="stat : ${statuses}" th:value="${stat}" th:text="${stat}" th:selected="${criteria?.status == stat}">Status</option></select></div>
+                            <div class="gov-card" style="margin-top:8px;background:var(--gov-bg)"><div class="gov-card-body" style="padding:10px">
+                                <div class="gov-card-title" style="font-size:11px">Cell Count Range</div>
+                                <div class="row g-2" style="margin-top:6px"><div class="col-6"><label class="gov-supporting">Min</label><input type="number" class="gov-input" name="minCellCount" placeholder="Min" th:value="${criteria?.minCellCount}"></div><div class="col-6"><label class="gov-supporting">Max</label><input type="number" class="gov-input" name="maxCellCount" placeholder="Max" th:value="${criteria?.maxCellCount}"></div></div>
+                                <div class="gov-card-title" style="font-size:11px;margin-top:10px">Subscriber Count Range</div>
+                                <div class="row g-2" style="margin-top:6px"><div class="col-6"><label class="gov-supporting">Min</label><input type="number" class="gov-input" name="minSubscriberCount" placeholder="Min" th:value="${criteria?.minSubscriberCount}"></div><div class="col-6"><label class="gov-supporting">Max</label><input type="number" class="gov-input" name="maxSubscriberCount" placeholder="Max" th:value="${criteria?.maxSubscriberCount}"></div></div>
+                            </div></div>
+                            <div style="display:flex;gap:8px;margin-top:12px">
+                                <button type="submit" class="gov-btn gov-btn--primary" style="flex:1"><i class="fas fa-magnifying-glass"></i> Apply Filters</button>
+                                <a href="/search" class="gov-btn gov-btn--secondary">Reset</a>
                             </div>
                         </form>
                     </div>
-                </div>
+                </section>
             </div>
 
-            <div class="col-md-9">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-list"></i> Search Results
-                            <span th:if="${searchPerformed}" class="badge bg-light text-dark float-end" 
-                                  th:text="${resultCount} + ' records found'">Results</span>
-                        </h5>
+            <!-- Results -->
+            <div class="col-lg-9">
+                <section class="gov-card">
+                    <div class="gov-card-header">
+                        <span><i class="fas fa-list me-1"></i> Results</span>
+                        <span th:if="${searchPerformed}" class="gov-badge gov-badge--neutral" th:text="${resultCount} + ' records found'">0 records</span>
                     </div>
-                    <div class="card-body">
-                        <div th:if="${!searchPerformed}" class="text-center text-muted py-5">
-                            <i class="fas fa-search fa-3x mb-3"></i>
-                            <p>Use the filters on the left to search for discrepancies</p>
+                    <div class="gov-card-body">
+                        <div th:if="${!searchPerformed}" class="gov-empty">
+                            <div class="gov-empty-icon"><i class="fas fa-magnifying-glass"></i></div>
+                            <div class="gov-empty-title">No search yet</div>
+                            <div class="gov-empty-text">Use the filters on the left and click <strong>Apply Filters</strong>. Leave all blank to list recent discrepancies.</div>
                         </div>
-
-                        <div th:if="${searchPerformed and #lists.isEmpty(results)}" class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No records found matching your search criteria.
+                        <div th:if="${searchPerformed and #lists.isEmpty(results)}" class="gov-empty">
+                            <div class="gov-empty-icon"><i class="fas fa-inbox"></i></div>
+                            <div class="gov-empty-title">No records found</div>
+                            <div class="gov-empty-text">No discrepancies match your filters. Try broadening the date range or clearing the TSP / category filter.</div>
                         </div>
-
-                        <div th:if="${searchPerformed and !#lists.isEmpty(results)}" class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Alert ID</th>
-                                        <th>TSP</th>
-                                        <th>Type</th>
-                                        <th>State</th>
-                                        <th>Status</th>
-                                        <th>Detection Time</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
+                        <div th:if="${searchPerformed and !#lists.isEmpty(results)}" class="gov-table-wrap">
+                            <table class="gov-table">
+                                <thead><tr><th>Alert ID</th><th>TSP</th><th>Type</th><th>State</th><th>Status</th><th>Detection Time</th><th>Action</th></tr></thead>
                                 <tbody>
-                                    <tr th:each="record : ${results}">
-                                        <td>
-                                            <a th:href="@{/alert/{id}(id=${record.alertId})}" th:text="${record.alertId}">Alert</a>
-                                        </td>
-                                        <td th:text="${record.tsp}">TSP</td>
-                                        <td>
-                                            <small class="badge bg-danger" th:text="${record.discrepancyType}">Type</small>
-                                        </td>
-                                        <td th:text="${record.state}">State</td>
-                                        <td>
-                                            <span class="badge" 
-                                                  th:classappend="${record.status == 'OPEN' ? 'bg-danger' : 
-                                                                   record.status == 'ACKNOWLEDGED' ? 'bg-warning' : 
-                                                                   record.status == 'RESOLVED' ? 'bg-success' : 'bg-secondary'}"
-                                                  th:text="${record.status}">Status</span>
-                                        </td>
-                                        <td th:text="${#temporals.format(record.detectionTime, 'dd-MM-yyyy HH:mm')}">Time</td>
-                                        <td>
-                                            <a th:href="@{/discrepancy/{id}(id=${record.id})}" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i> View
-                                            </a>
-                                        </td>
-                                    </tr>
+                                <tr th:each="record : ${results}">
+                                    <td><a th:href="@{/alert/{id}(id=${record.alertId})}" th:text="${record.alertId}" style="font-weight:600">Alert</a></td>
+                                    <td th:text="${record.tsp}">TSP</td>
+                                    <td><span class="gov-badge gov-badge--neutral" th:text="${record.discrepancyType}">Type</span></td>
+                                    <td th:text="${record.state} ?: '—'">State</td>
+                                    <td><span class="gov-badge" th:classappend="${record.status.name()=='OPEN'} ? 'gov-badge--danger' : (${record.status.name()=='RESOLVED'} ? 'gov-badge--success' : 'gov-badge--warning')" th:text="${record.status}">Status</span></td>
+                                    <td th:text="${#temporals.format(record.detectionTime, 'dd MMM yyyy HH:mm')}">Time</td>
+                                    <td><a th:href="@{/discrepancy/{id}(id=${record.id})}" class="gov-btn gov-btn--secondary gov-btn--sm"><i class="fas fa-eye"></i> View</a></td>
+                                </tr>
                                 </tbody>
                             </table>
                         </div>
+                        <div th:if="${searchPerformed and !#lists.isEmpty(results)}" class="gov-supporting" style="margin-top:8px" th:text="'Showing ' + ${#lists.size(results)} + ' records. Use filters to narrow further.'"></div>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: govFooter}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/gov-portal.js}"></script>
 </body>
 </html>

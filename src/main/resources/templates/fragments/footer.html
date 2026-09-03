@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="govFooter" class="gov-footer" role="contentinfo">
+    <div>
+        <strong>TRAI SMS Dissemination Audit System</strong> <span class="d-none d-md-inline">— CAP Sachet TSP Compliance Monitor</span>
+        <span class="mx-2 d-none d-md-inline">·</span>
+        <span>Application v1.0 · PostgreSQL 18 · <a href="/live" style="color:inherit">Live DB: trai_audit</a></span>
+    </div>
+    <div style="font-size:11px">
+        For official use · <a th:href="@{/search}">Search records</a> · <a href="#" onclick="alert('See NEEDS_SIGN_OFF.md for unresolved assumptions.'); return false;">NEEDS_SIGN_OFF</a>
+    </div>
+</footer>
+</body>
+</html>

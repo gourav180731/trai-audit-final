@@ -1,100 +1,242 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Compliance Monitor — CAP Sachet</title>
+    <meta name="theme-color" content="#0F2A44">
+    <title>SMS Dissemination Audit Dashboard — TRAI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/gov-portal.css}" rel="stylesheet">
 </head>
 <body>
-<nav class="navbar navbar-dark bg-primary">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/"><i class="fas fa-broadcast-tower"></i> TSP Compliance Monitor — <small>Live PostgreSQL</small></a>
-        <div>
-            <a class="btn btn-outline-light btn-sm" href="/search"><i class="fas fa-search"></i> Search</a>
+<div th:replace="~{fragments/header :: govHeader}"></div>
+<div class="gov-shell">
+    <div th:replace="~{fragments/sidebar :: govSidebar(active='dashboard')}"></div>
+    <main class="gov-main" id="govMain">
+        <!-- Breadcrumbs -->
+        <nav class="gov-breadcrumb" aria-label="Breadcrumb">
+            <span>Dashboard</span>
+        </nav>
+
+        <!-- Page header -->
+        <div class="gov-page-head">
+            <h1 class="gov-page-title">SMS Dissemination Audit Dashboard</h1>
+            <p class="gov-muted">Overview of SMS dissemination compliance, discrepancies and audit activity. All figures are calculated live from <code>dm.t_tsp_sms_dissemination_statistics</code> — no manual upload.</p>
         </div>
-    </div>
-</nav>
-<div class="container-fluid mt-4">
 
-    <div th:if="${success}" class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle"></i> <span th:text="${success}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-
-    <!-- Generate Report — Click 1 -->
-    <div class="card border-success mb-4">
-        <div class="card-header bg-success text-white"><h5 class="mb-0"><i class="fas fa-file-excel"></i> Generate Report — Step 1 of 2</h5></div>
-        <div class="card-body">
-            <p class="text-muted">Runs all 7 live checks directly against <code>dm.t_tsp_sms_dissemination_statistics</code>. No file upload. Filters are optional — leave blank to scan all data.</p>
-            <form method="post" th:action="@{/live/generate}" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Date From (start_time)</label>
-                    <input type="date" name="dateFrom" class="form-control">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Date To</label>
-                    <input type="date" name="dateTo" class="form-control">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">TSP filter</label>
-                    <select name="tspFilter" class="form-select">
-                        <option value="">— All TSPs —</option>
-                        <option value="Airtel">Airtel</option>
-                        <option value="BSNL">BSNL</option>
-                        <option value="Vodafone Idea">Vodafone Idea (matches Vodafone-Idea)</option>
-                        <option value="Reliance Jio">Reliance Jio</option>
-                        <option value="MTNL">MTNL</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Triggered by (audit)</label>
-                    <input type="text" name="triggeredBy" class="form-control" placeholder="your name / system">
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-success btn-lg"><i class="fas fa-cogs"></i> Generate Report</button>
-                    <small class="text-muted ms-2">This will run live SQL, persist discrepancies, and show a preview with a download link and a <strong>Send Email</strong> button (Step 2).</small>
-                </div>
-            </form>
+        <!-- Notifications -->
+        <div th:if="${success}" class="gov-alert gov-alert--success" role="status">
+            <i class="fas fa-circle-check gov-alert-icon"></i>
+            <div th:text="${success}"></div>
         </div>
-    </div>
-
-    <!-- Latest batch summary -->
-    <div th:if="${latestBatch != null}" class="row g-3 mb-4">
-        <div class="col-md-3"><div class="card border-primary"><div class="card-body"><h6 class="card-subtitle mb-2 text-muted">Total Alerts (distinct identifier)</h6><h2 th:text="${latestBatch.totalAlertsProcessed}">0</h2><small class="text-muted" th:text="'Batch #' + ${latestBatch.id} + ' at ' + ${latestBatch.ingestionTime}"></small></div></div></div>
-        <div class="col-md-3"><div class="card border-warning"><div class="card-body"><h6 class="card-subtitle mb-2 text-muted">TSP Rows Scanned</h6><h2 th:text="${latestBatch.totalTspRowsProcessed}">0</h2><small class="text-muted" th:text="'Filter: ' + (${latestBatch.tspFilter} ?: 'ALL')"></small></div></div></div>
-        <div class="col-md-3"><div class="card border-danger"><div class="card-body"><h6 class="card-subtitle mb-2 text-muted">Discrepancies</h6><h2 class="text-danger" th:text="${latestBatch.totalDiscrepancyInstances}">0</h2><small class="text-muted" th:text="${latestBatch.totalAlertsWithDiscrepancies} + ' alerts affected'"></small></div></div></div>
-        <div class="col-md-3"><div class="card border-info"><div class="card-body"><h6 class="card-subtitle mb-2 text-muted">Status</h6><h2><span class="badge bg-success" th:text="${latestBatch.status}">COMPLETED</span></h2><small class="text-muted" th:text="${latestBatch.triggeredBy} ?: '—'"></small></div></div></div>
-    </div>
-
-    <!-- Category breakdown -->
-    <div th:if="${latestBatch != null}" class="card mb-4">
-        <div class="card-header bg-primary text-white"><h6 class="mb-0"><i class="fas fa-list"></i> 7 Live Checks — Counts for Latest Batch (#<span th:text="${latestBatch.id}"></span>)</h6></div>
-        <div class="card-body p-0">
-            <table class="table table-sm table-hover mb-0">
-                <thead><tr><th>#</th><th>Check</th><th class="text-end">Count</th><th>What it flags (live column)</th></tr></thead>
-                <tbody>
-                <tr><td>1</td><td>Complete dissemination failure</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countCompleteFailure}">0</span></td><td><small>start_time, end_time, response1/2 all NULL</small></td></tr>
-                <tr><td>2</td><td>Feedback / delta not received</td><td class="text-end"><span class="badge bg-warning" th:text="${latestBatch.countStatisticsPending}">0</span></td><td><small>end_time set but response2 NULL or delta_received != 'yes' with prefetch</small></td></tr>
-                <tr><td>3</td><td>Feedback delay &gt; threshold</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countFeedbackDelayExceeds}">0</span></td><td><small>response2 - end_time &gt; 600s (configurable)</small></td></tr>
-                <tr><td>4</td><td>Prefetch duration vs MRAD</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countPrefetchDurationBreach}">0</span></td><td><small>prefetch_end - prefetch_start vs cell-count band</small></td></tr>
-                <tr><td>5</td><td>Total duration vs MRAD</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countTotalDurationBreach}">0</span></td><td><small>end - start vs cell-count band; &gt;30k = beyond matrix</small></td></tr>
-                <tr><td>6</td><td>Inordinate subscriber ratio</td><td class="text-end"><span class="badge bg-warning" th:text="${latestBatch.countInordinateRatio}">0</span></td><td><small>Requires TRAI baseline + state mapping — see NEEDS_SIGN_OFF</small></td></tr>
-                <tr><td>7a</td><td>Expired non-zero</td><td class="text-end"><span class="badge bg-danger" th:text="${latestBatch.countExpiredNonzero}">0</span></td><td><small>total_expired &gt;0 or sms_count_expired &gt;0</small></td></tr>
-                <tr><td>7b</td><td>Arithmetic mismatch</td><td class="text-end"><span class="badge bg-warning" th:text="${latestBatch.countArithmeticMismatch}">0</span></td><td><small>success+failure+expired != total_subscribers</small></td></tr>
-                </tbody>
-            </table>
+        <div th:if="${error}" class="gov-alert gov-alert--danger mt-2" role="alert">
+            <i class="fas fa-circle-exclamation gov-alert-icon"></i>
+            <div th:text="${error}"></div>
         </div>
-    </div>
 
-    <div th:if="${latestBatch == null}" class="alert alert-info">No live batches yet — use <strong>Generate Report</strong> above to run the first live scan.</div>
+        <!-- Summary cards — real backend values, not hardcoded -->
+        <div th:if="${latestBatch != null}" class="gov-stat-grid" style="margin:12px 0 16px">
+            <div class="gov-stat gov-stat--primary">
+                <div class="gov-stat-icon"><i class="fas fa-bell"></i></div>
+                <div class="gov-stat-label">Total Alerts</div>
+                <div class="gov-stat-value" th:text="${latestBatch.totalAlertsProcessed}">0</div>
+                <div class="gov-stat-hint">Distinct <code>identifier</code> in latest batch <span th:text="'#' + ${latestBatch.id}"></span></div>
+            </div>
+            <div class="gov-stat gov-stat--info">
+                <div class="gov-stat-icon"><i class="fas fa-table"></i></div>
+                <div class="gov-stat-label">TSP Records</div>
+                <div class="gov-stat-value" th:text="${latestBatch.totalTspRowsProcessed}">0</div>
+                <div class="gov-stat-hint">Rows scanned · Filter: <span th:text="${latestBatch.tspFilter} ?: 'ALL'"></span></div>
+            </div>
+            <div class="gov-stat gov-stat--danger">
+                <div class="gov-stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+                <div class="gov-stat-label">Discrepancies</div>
+                <div class="gov-stat-value" th:text="${latestBatch.totalDiscrepancyInstances}">0</div>
+                <div class="gov-stat-hint"><span th:text="${latestBatch.totalAlertsWithDiscrepancies}">0</span> alerts affected</div>
+            </div>
+            <div class="gov-stat gov-stat--warning">
+                <div class="gov-stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="gov-stat-label">Last Audit</div>
+                <div class="gov-stat-value" style="font-size:14px;letter-spacing:0" th:text="${#temporals.format(latestBatch.ingestionTime, 'dd MMM yyyy, HH:mm')}">—</div>
+                <div class="gov-stat-hint">By <span th:text="${latestBatch.triggeredBy} ?: '—'"></span> · <span class="gov-badge gov-badge--success" th:text="${latestBatch.status}">COMPLETED</span></div>
+            </div>
+        </div>
+        <div th:if="${latestBatch == null}" class="gov-empty">
+            <div class="gov-empty-icon"><i class="fas fa-inbox"></i></div>
+            <div class="gov-empty-title">No audit has been run yet</div>
+            <div class="gov-empty-text">Use <strong>Generate Audit Report</strong> below to run the 7 live checks against the current database. No file upload required.</div>
+        </div>
 
-     <div class="card"><div class="card-header"><h6 class="mb-0">Recent Batches</h6></div><div class="card-body p-0"><table class="table table-sm mb-0"><thead><tr><th>ID</th><th>Time</th><th>Filter</th><th>Alerts</th><th>Rows</th><th>Discrepancies</th><th>Status</th></tr></thead><tbody><tr th:each="b : ${recentBatches}"><td th:text="${b.id}"></td><td th:text="${b.ingestionTime}"></td><td th:text="${b.tspFilter} ?: 'ALL'"></td><td th:text="${b.totalAlertsProcessed}"></td><td th:text="${b.totalTspRowsProcessed}"></td><td th:text="${b.totalDiscrepancyInstances}"></td><td><span class="badge" th:classappend="${b.status.name()=='COMPLETED'} ? 'bg-success' : 'bg-danger'" th:text="${b.status}"></span></td></tr></tbody></table></div></div>
+        <!-- Generate Audit Report — official form -->
+        <section class="gov-card" aria-labelledby="govGenerateTitle" style="margin-top:16px">
+            <div class="gov-card-header gov-card-header--success">
+                <span id="govGenerateTitle"><i class="fas fa-file-circle-check me-1"></i> Generate Audit Report — Step 1 of 2</span>
+                <span class="gov-badge gov-badge--neutral">Live SQL · dm schema</span>
+            </div>
+            <div class="gov-card-body">
+                <p class="gov-supporting" style="margin-bottom:12px">Runs all 7 live checks directly against <code>dm.t_tsp_sms_dissemination_statistics</code>. Date and TSP filters are optional — leave blank to scan all data. Results are persisted and audited.</p>
+                <form method="post" th:action="@{/live/generate}" class="row g-3" data-gov-prevent-double>
+                    <div class="col-md-3">
+                        <label for="govDateFrom" class="gov-form-label">Audit period — From <span class="gov-supporting">(start_time)</span></label>
+                        <input type="date" id="govDateFrom" name="dateFrom" class="gov-input">
+                        <div class="gov-form-hint">Optional</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="govDateTo" class="gov-form-label">Audit period — To</label>
+                        <input type="date" id="govDateTo" name="dateTo" class="gov-input">
+                        <div class="gov-form-hint">Optional</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="govTsp" class="gov-form-label">TSP filter</label>
+                        <select id="govTsp" name="tspFilter" class="gov-select">
+                            <option value="">— All TSPs —</option>
+                            <option value="Airtel">Airtel</option>
+                            <option value="BSNL">BSNL</option>
+                            <option value="Vodafone Idea">Vodafone Idea (matches Vodafone-Idea)</option>
+                            <option value="Reliance Jio">Reliance Jio</option>
+                            <option value="MTNL">MTNL</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="govTriggeredBy" class="gov-form-label">Triggered by <span class="gov-required">*</span></label>
+                        <input type="text" id="govTriggeredBy" name="triggeredBy" class="gov-input" placeholder="your name / system">
+                        <div class="gov-form-hint">For audit trail</div>
+                    </div>
+                    <div class="col-12" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <button type="submit" class="gov-btn gov-btn--success gov-btn--lg"><i class="fas fa-gears"></i> Generate Report</button>
+                        <span class="gov-supporting">Runs live SQL, persists discrepancies, and opens a preview with a <strong>Download</strong> link and <strong>Send Email</strong> (Step 2).</span>
+                    </div>
+                </form>
+            </div>
+        </section>
 
-     <div class="text-center mt-4 mb-2">
-         <small class="text-muted">Need the old workflow? <a th:href="@{/upload}" class="text-muted text-decoration-underline">Import legacy Excel report (deprecated)</a> — direct URL only, not part of the live flow.</small>
-     </div>
+        <!-- 7 Live Checks — counts from latestBatch, no dummy values -->
+        <section th:if="${latestBatch != null}" class="gov-card" style="margin-top:16px">
+            <div class="gov-card-header">
+                <span><i class="fas fa-list-check me-1"></i> 7 Live Checks — Latest Batch <span th:text="'#' + ${latestBatch.id}"></span></span>
+                <span class="gov-supporting" th:text="${latestBatch.totalDiscrepancyInstances} + ' findings'">0 findings</span>
+            </div>
+            <div class="gov-card-body gov-card-body--p0">
+                <div class="gov-table-wrap" style="border:none;border-radius:0">
+                    <table class="gov-table">
+                        <thead><tr><th style="width:36px">#</th><th>Check</th><th class="gov-text-right" style="width:90px">Count</th><th>What it flags</th><th style="width:90px"></th></tr></thead>
+                        <tbody>
+                        <tr><td>1</td><td>Complete dissemination failure</td><td class="gov-text-right"><span class="gov-badge gov-badge--danger" th:text="${latestBatch.countCompleteFailure}">0</span></td><td class="gov-supporting">start_time, end_time, response1/2 all NULL</td><td><a th:href="@{/category/COMPLETE_FAILURE(batchId=${latestBatch.id})}" class="gov-btn gov-btn--secondary gov-btn--sm">View</a></td></tr>
+                        <tr><td>2</td><td>Feedback / delta not received</td><td class="gov-text-right"><span class="gov-badge gov-badge--warning" th:text="${latestBatch.countStatisticsPending}">0</span></td><td class="gov-supporting">end_time set but response2 NULL or delta ≠ 'yes'</td><td><a th:href="@{/category/STATISTICS_PENDING(batchId=${latestBatch.id})}" class="gov-btn gov-btn--secondary gov-btn--sm">View</a></td></tr>
+                        <tr><td>3</td><td>Feedback delay &gt; threshold</td><td class="gov-text-right"><span class="gov-badge gov-badge--danger" th:text="${latestBatch.countFeedbackDelayExceeds}">0</span></td><td class="gov-supporting">response2 − end_time &gt; 600s</td><td><a th:href="@{/category/FEEDBACK_DELAY_EXCEEDS_THRESHOLD(batchId=${latestBatch.id})}" class="gov-btn gov-btn--secondary gov-btn--sm">View</a></td></tr>
+                        <tr><td>4</td><td>Prefetch duration vs MRAD</td><td class="gov-text-right"><span class="gov-badge gov-badge--danger" th:text="${latestBatch.countPrefetchDurationBreach}">0</span></td><td class="gov-supporting">prefetch_end − prefetch_start vs band</td><td><a th:href="@{/category/PREFETCH_DURATION_MATRIX_BREACH(batchId=${latestBatch.id})}" class="gov-btn gov-btn--secondary gov-btn--sm">View</a></td></tr>
+                        <tr><td>5</td><td>Total duration vs MRAD</td><td class="gov-text-right"><span class="gov-badge gov-badge--danger" th:text="${latestBatch.countTotalDurationBreach}">0</span></td><td class="gov-supporting">end − start vs band; &gt;30k = beyond matrix</td><td><a th:href="@{/category/TOTAL_DURATION_MATRIX_BREACH(batchId=${latestBatch.id})}" class="gov-btn gov-btn--secondary gov-btn--sm">View</a></td></tr>
+                        <tr><td>6</td><td>Inordinate subscriber ratio</td><td class="gov-text-right"><span class="gov-badge gov-badge--neutral" th:text="${latestBatch.countInordinateRatio}">0</span></td><td class="gov-supporting">Requires TRAI baseline — see NEEDS_SIGN_OFF</td><td><span class="gov-badge gov-badge--neutral">Blocked</span></td></tr>
+                        <tr><td>7a</td><td>Expired non-zero</td><td class="gov-text-right"><span class="gov-badge gov-badge--danger" th:text="${latestBatch.countExpiredNonzero}">0</span></td><td class="gov-supporting">total_expired &gt;0 or sms_count_expired &gt;0</td><td><a th:href="@{/category/EXPIRED_NONZERO(batchId=${latestBatch.id})}" class="gov-btn gov-btn--secondary gov-btn--sm">View</a></td></tr>
+                        <tr><td>7b</td><td>Arithmetic mismatch</td><td class="gov-text-right"><span class="gov-badge gov-badge--warning" th:text="${latestBatch.countArithmeticMismatch}">0</span></td><td class="gov-supporting">success+failure+expired ≠ total_subscribers</td><td><a th:href="@{/category/ARITHMETIC_MISMATCH(batchId=${latestBatch.id})}" class="gov-btn gov-btn--secondary gov-btn--sm">View</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
- </div>
+        <!-- Analytics — real backend data only -->
+        <div th:if="${latestBatch != null}" class="gov-panel-grid" style="margin-top:16px">
+            <section class="gov-card">
+                <div class="gov-card-header"><span>Discrepancies by Category</span><span class="gov-supporting">Latest batch</span></div>
+                <div class="gov-card-body">
+                    <canvas id="govChartCategory" height="180" aria-label="Bar chart of discrepancies by category" role="img"></canvas>
+                    <div class="gov-supporting" style="margin-top:8px">Source: <code>discrepancy_records</code> grouped by <code>discrepancy_type</code> for batch <span th:text="${latestBatch.id}"></span>. Check 6 is 0 (blocked) and is not fabricated.</div>
+                </div>
+            </section>
+            <section class="gov-card">
+                <div class="gov-card-header"><span>TSP-wise Discrepancies</span><span class="gov-supporting">Latest batch</span></div>
+                <div class="gov-card-body">
+                    <canvas id="govChartTsp" height="180" aria-label="Horizontal bar chart of discrepancies by TSP" role="img"></canvas>
+                    <div class="gov-supporting" style="margin-top:8px">Source: <code>discrepancy_records</code> grouped by <code>tsp</code>. Respects hyphen/space normalization (Vodafone-Idea).* </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Recent Audit Activity — real batches -->
+        <section class="gov-card" style="margin-top:16px">
+            <div class="gov-card-header"><span><i class="fas fa-clock-rotate-left me-1"></i> Recent Audit Activity</span><a th:href="@{/search}" class="gov-btn gov-btn--secondary gov-btn--sm">Search all records</a></div>
+            <div class="gov-card-body gov-card-body--p0">
+                <div th:if="${#lists.isEmpty(recentBatches)}" class="gov-empty">
+                    <div class="gov-empty-icon"><i class="fas fa-inbox"></i></div>
+                    <div class="gov-empty-title">No audits yet</div>
+                    <div class="gov-empty-text">Generate your first report above. History will appear here with timestamps and filters for audit trail.</div>
+                </div>
+                <div th:unless="${#lists.isEmpty(recentBatches)}" class="gov-table-wrap" style="border:none;border-radius:0">
+                    <table class="gov-table">
+                        <thead><tr><th>ID</th><th>Time</th><th>Filter</th><th class="gov-text-right">Alerts</th><th class="gov-text-right">Rows</th><th class="gov-text-right">Findings</th><th>Status</th></tr></thead>
+                        <tbody>
+                        <tr th:each="b : ${recentBatches}">
+                            <td><span class="gov-badge gov-badge--neutral" th:text="'#' + ${b.id}">#1</span></td>
+                            <td th:text="${#temporals.format(b.ingestionTime, 'dd MMM yyyy HH:mm')}">—</td>
+                            <td><span class="gov-badge gov-badge--info" th:text="${b.tspFilter} ?: 'ALL'">ALL</span></td>
+                            <td class="gov-text-right" th:text="${b.totalAlertsProcessed}">0</td>
+                            <td class="gov-text-right" th:text="${b.totalTspRowsProcessed}">0</td>
+                            <td class="gov-text-right"><strong th:text="${b.totalDiscrepancyInstances}">0</strong></td>
+                            <td><span class="gov-badge" th:classappend="${b.status.name()=='COMPLETED'} ? 'gov-badge--success' : 'gov-badge--danger'" th:text="${b.status}">COMPLETED</span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <div class="gov-card" style="margin-top:12px;background:var(--gov-info-bg);border-color:var(--gov-border)">
+            <div class="gov-card-body" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center">
+                <div class="gov-supporting">Need the old workflow? <a th:href="@{/upload}" class="text-decoration-underline">Import legacy Excel report (deprecated)</a> — direct URL only, not part of live flow. See <code>NEEDS_SIGN_OFF.md</code> for unresolved assumptions.</div>
+                <span class="gov-badge gov-badge--neutral">Live DB: trai_audit · PostgreSQL 18 · Flyway V2</span>
+            </div>
+        </div>
+
+    </main>
+</div>
+<div th:replace="~{fragments/footer :: govFooter}"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+/* Charts — real backend data only, no dummy values */
+(function(){
+  var latest = /*[[${latestBatch}]]*/ null;
+  if(!latest) return;
+  var c = {
+    complete: /*[[${latestBatch.countCompleteFailure}]]*/ 0,
+    feedbackNotReceived: /*[[${latestBatch.countStatisticsPending}]]*/ 0,
+    delay: /*[[${latestBatch.countFeedbackDelayExceeds}]]*/ 0,
+    prefetch: /*[[${latestBatch.countPrefetchDurationBreach}]]*/ 0,
+    total: /*[[${latestBatch.countTotalDurationBreach}]]*/ 0,
+    ratio: /*[[${latestBatch.countInordinateRatio}]]*/ 0,
+    expired: /*[[${latestBatch.countExpiredNonzero}]]*/ 0,
+    arith: /*[[${latestBatch.countArithmeticMismatch}]]*/ 0
+  };
+  var catEl = document.getElementById('govChartCategory');
+  if(catEl && window.Chart){
+    new Chart(catEl, {
+      type:'bar',
+      data:{labels:['1 Complete','2 Feedback','3 Delay','4 Prefetch','5 Total','6 Ratio','7a Expired','7b Arith'], datasets:[{label:'Findings', data:[c.complete,c.feedbackNotReceived,c.delay,c.prefetch,c.total,c.ratio,c.expired,c.arith], backgroundColor:'#123B6D', borderColor:'#0F2A44', borderWidth:1, borderRadius:2}]},
+      options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, grid:{color:'#E8EDF3'}, ticks:{precision:0}}, x:{grid:{display:false}, ticks:{font:{size:10}}}} }
+    });
+  }
+  // TSP chart — data injected via separate script block below that reads tspCounts model
+})();
+</script>
+<script th:inline="javascript">
+(function(){
+  var tspCounts = /*[[${tspCounts}]]*/ [];
+  var el = document.getElementById('govChartTsp');
+  if(!el || !window.Chart || !tspCounts) return;
+  // tspCounts is List<Object[]> from JPA: each entry [tsp, count] — Thymeleaf inlines as array of arrays
+  var labels = tspCounts.map(function(r){ return r[0]; });
+  var data = tspCounts.map(function(r){ return r[1]; });
+  if(labels.length===0) return;
+  new Chart(el, {
+    type:'bar',
+    data:{labels:labels, datasets:[{label:'Discrepancies', data:data, backgroundColor:'#1E5A94', borderColor:'#123B6D', borderWidth:1, borderRadius:2}]},
+    options:{indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, grid:{color:'#E8EDF3'}, ticks:{precision:0}}, y:{grid:{display:false}}}}
+  });
+})();
+</script>
+<script th:src="@{/js/gov-portal.js}"></script>
 </body>
 </html>

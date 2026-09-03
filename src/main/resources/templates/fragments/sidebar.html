@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside th:fragment="govSidebar(active)" id="govSidebar" class="gov-sidebar" aria-label="Primary navigation">
+    <div class="gov-sidebar-section">Main</div>
+    <ul class="gov-nav">
+        <li>
+            <a th:href="@{/}" th:classappend="${active}=='dashboard' ? 'is-active'" aria-current="page">
+                <i class="fas fa-house gov-nav-icon"></i> Dashboard
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/search}" th:classappend="${active}=='search' ? 'is-active'">
+                <i class="fas fa-magnifying-glass gov-nav-icon"></i> Search &amp; Records
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/upload}" th:classappend="${active}=='upload' ? 'is-active'" style="opacity:0.85">
+                <i class="fas fa-upload gov-nav-icon"></i> Upload Data
+                <span class="gov-nav-badge">deprecated</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="gov-sidebar-section">Monitoring</div>
+    <ul class="gov-nav">
+        <li>
+            <a th:href="@{/category/COMPLETE_FAILURE}" th:classappend="${active}=='discrepancies' ? 'is-active'">
+                <i class="fas fa-triangle-exclamation gov-nav-icon"></i> Discrepancies
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/search}" th:classappend="${active}=='tsp' ? 'is-active'">
+                <i class="fas fa-tower-broadcast gov-nav-icon"></i> TSP-wise Records
+            </a>
+        </li>
+    </ul>
+
+    <div class="gov-sidebar-section">Information</div>
+    <ul class="gov-nav">
+        <li>
+            <a href="#" onclick="alert('Audit thresholds are configured in application.properties / AuditProperties.java. See NEEDS_SIGN_OFF.md for sign-off items.'); return false;">
+                <i class="fas fa-sliders gov-nav-icon"></i> Audit Configuration
+            </a>
+        </li>
+        <li>
+            <a href="#" onclick="alert('TRAI SMS Dissemination Audit System — Spring Boot 3.5 / PostgreSQL 18 / Thymeleaf. Live DB: trai_audit. See README.md and NEEDS_SIGN_OFF.md.'); return false;">
+                <i class="fas fa-circle-info gov-nav-icon"></i> System Information
+            </a>
+        </li>
+    </ul>
+
+    <div style="padding:12px 16px;margin-top:8px">
+        <div class="gov-alert gov-alert--info" style="padding:8px 10px">
+            <i class="fas fa-shield-halved gov-alert-icon"></i>
+            <div style="font-size:11px;line-height:1.4">
+                <strong>Regulatory audit system</strong><br>
+                All thresholds and NEEDS_SIGN_OFF items are logged, not silently inferred.
+            </div>
+        </div>
+    </div>
+</aside>
+</body>
+</html>
